@@ -1,3 +1,5 @@
 spring:
   application:
-    name: portfolio
+    name: CASL - Portfolio
+    title: CASL - Portfolio
+    version: 1.0.0
