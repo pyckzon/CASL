@@ -6,3 +6,5 @@ spring:
   docker:
     compose:
       enabled: false
+Server:
+  port: 8666
