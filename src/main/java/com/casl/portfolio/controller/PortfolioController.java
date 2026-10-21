@@ -1,5 +1,6 @@
 package com.casl.portfolio.controller;
 
+import com.casl.portfolio.models.request.PortfolioRequest;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,7 @@ public class PortfolioController {
 
 
 
-    @GetMapping("/user/{userId}")
+    @GetMapping("/user/{userId}")//Ejemplo de como usar un @PathVariable y un @RequestParam vale la pena investigar su diferencia y cuando utilizarlas
     public ResponseEntity<Map<String, Object>> getPortfolio(@PathVariable String userId, @RequestParam Long id) {
         log.info("INFO Fetching portfolio data for user: {}, request ID: {}", userId, id);
         return ResponseEntity.ok(Map.of(
@@ -24,7 +25,7 @@ public class PortfolioController {
     }
 
     @PostMapping("/user")
-    public String createPortfolio() {
+    public String createPortfolio(@RequestBody PortfolioRequest portfolioRequest) {
         return "Portfolio created";
     }
     @PutMapping("/user")
