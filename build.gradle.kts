@@ -20,14 +20,22 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 	implementation("org.springframework.boot:spring-boot-starter-log4j2")
+
 	compileOnly("org.projectlombok:lombok")
+
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	developmentOnly("org.springframework.boot:spring-boot-docker-compose")
+
 	annotationProcessor("org.projectlombok:lombok")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.mockito:mockito-core")
+
 	testCompileOnly("org.projectlombok:lombok")
+
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
 	testAnnotationProcessor("org.projectlombok:lombok")
 }
 
