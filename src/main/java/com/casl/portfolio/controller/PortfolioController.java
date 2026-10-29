@@ -24,8 +24,8 @@ public class PortfolioController {
         ));
     }
 
-    @PostMapping("/user")
-    public String createPortfolio(@RequestBody PortfolioRequest portfolioRequest) {
+    @PostMapping("/portfolio")
+    public String requestPortfolio(@RequestBody PortfolioRequest portfolioRequest) {
         return "Portfolio created";
     }
     @PutMapping("/user")
