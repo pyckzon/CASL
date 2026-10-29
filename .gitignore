@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Postman plugin cache (estado local del plugin de Postman) ###
+.postman/
