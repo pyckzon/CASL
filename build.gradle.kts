@@ -2,6 +2,7 @@ plugins {
 	java
 	id("org.springframework.boot") version "4.1.2"
 	id("io.spring.dependency-management") version "1.1.7"
+	id("jacoco")
 }
 
 group = "com.casl"
@@ -44,4 +45,42 @@ configurations.configureEach {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+val jacocoExcludes = listOf(
+	"com/casl/portfolio/utils/**",
+	"com/casl/portfolio/models/**",
+	"com/casl/portfolio/PortfolioApplication*"
+)
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+	}
+	classDirectories.setFrom(files(classDirectories.files.map {
+		fileTree(it).matching { exclude(jacocoExcludes) }
+	}))
+}
+
+tasks.jacocoTestCoverageVerification {
+	dependsOn(tasks.test)
+	classDirectories.setFrom(files(classDirectories.files.map {
+		fileTree(it).matching { exclude(jacocoExcludes) }
+	}))
+	violationRules {
+		rule {
+			limit {
+				counter = "LINE"
+				value = "COVEREDRATIO"
+				minimum = "0.20".toBigDecimal()
+			}
+		}
+	}
+}
+
+tasks.check {
+	dependsOn(tasks.jacocoTestCoverageVerification)
 }
