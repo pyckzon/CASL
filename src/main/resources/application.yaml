@@ -1,9 +1,10 @@
 spring:
   application:
     name: CASL - Portfolio
+    title: CASL - Portfolio
     version: 1.0.0
   docker:
     compose:
       enabled: false
-server:
+Server:
   port: 8666

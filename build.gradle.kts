@@ -31,6 +31,7 @@ dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.mockito:mockito-core")
 
 	testCompileOnly("org.projectlombok:lombok")
 
