@@ -55,8 +55,57 @@ services:
     environment:
       SERVER_PORT: 8080
       USERS_SERVICE_URI: http://casl-users-service:8666
+      CATALOG_SERVICE_URI: http://casl-catalog-service:8670
     ports:
       - "8080:8080"
 
+  redis:
+    profiles:
+      - core
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  postgres-catalog:
+    profiles:
+      - core
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: casl_catalog
+      POSTGRES_USER: casl
+      POSTGRES_PASSWORD: casl_dev
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_catalog_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_catalog"]
+      interval: 5s
+      retries: 10
+
+  casl-catalog-service:
+    profiles:
+      - core
+    image: casl/casl-catalog-service:0.0.1-SNAPSHOT
+    depends_on:
+      postgres-catalog:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8670
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-catalog:5432/casl_catalog
+      SPRING_DATASOURCE_USERNAME: casl
+      SPRING_DATASOURCE_PASSWORD: casl_dev
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    ports:
+      - "8670:8670"
+
 volumes:
   pg_users_data:
+  pg_catalog_data:

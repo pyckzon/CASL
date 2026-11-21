@@ -10,6 +10,10 @@ spring:
               uri: ${USERS_SERVICE_URI:http://localhost:8666}
               predicates:
                 - Path=/api/users/**
+            - id: catalog-service
+              uri: ${CATALOG_SERVICE_URI:http://localhost:8670}
+              predicates:
+                - Path=/api/catalog/**
 
 server:
   port: 8080

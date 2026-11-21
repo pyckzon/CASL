@@ -4,7 +4,7 @@ Before responding to any non-trivial API engineering task — designing, impleme
 
 ## Project
 - Spring Boot 4.1.2 (Gradle Kotlin DSL), Java 21, monorepo root `casl` (`settings.gradle.kts`)
-- Modules under `services/casl-*`; current: `services/casl-users-service` (package `com.casl.users`, main `UsersServiceApplication`)
+- Modules under `services/casl-*`; current: `services/casl-users-service` (package `com.casl.users`, main `UsersServiceApplication`), `services/casl-catalog-service` (package `com.casl.catalog`, main `CatalogServiceApplication`), `services/casl-gateway` (package `com.casl.gateway`, main `GatewayApplication`)
 - Shared build conventions: `buildSrc` plugin `casl-spring-boot-service`; versions in `gradle/libs.versions.toml`; ADRs in `docs/architecture/decisions/`
 - Config: `services/casl-users-service/src/main/resources/application.yaml` (`casl-users-service`, `server.port: 8666`, actuator health expuesto)
 - Java 21 toolchain enforced by the `buildSrc` convention plugin
@@ -18,11 +18,10 @@ Before responding to any non-trivial API engineering task — designing, impleme
 - Dev: `spring-boot-devtools` included as `developmentOnly`
 
 ## API
-- Base path: `/api/users/v1/users` (gateway: `http://localhost:8080/api/users/**` → `casl-users-service`)
-- Endpoints: `POST` (201+Location), `GET /{id}`, `GET` (paginado, filtros `status`/`email`), `PUT /{id}`, `DELETE /{id}` (204)
-- Errores en `application/problem+json` (RFC 9457) con `code` estable (`USER_NOT_FOUND`, `USER_EMAIL_ALREADY_EXISTS`, `VALIDATION_ERROR`, `MALFORMED_REQUEST`, `NOT_FOUND`)
-- Contrato: `postman/specs/users-v1.yaml` (OpenAPI 3.1); colección Postman en Fase 2
-- Legado `/rest-api/v1/crud` eliminado en Fase 1
+- Users: base path `/api/users/v1/users` (gateway `http://localhost:8080/api/users/**`)
+- Catalog: base path `/api/catalog/v1/products`, `/api/catalog/v1/categories` (gateway `http://localhost:8080/api/catalog/**`)
+- Errores en `application/problem+json` (RFC 9457) con `code` estable
+- Contratos: `postman/specs/users-v1.yaml`, `postman/specs/catalog-v1.yaml` (OpenAPI 3.1)
 - Models in `com.casl.users.models` (`users`, `request`)
 
 ## Tests

@@ -1,0 +1,295 @@
+openapi: 3.1.0
+info:
+  title: CASL Catalog API
+  version: 1.0.0
+  summary: Catálogo de productos, categorías y stock
+  description: Contrato del servicio de catálogo (Fase 2). Búsqueda por criterios combinables (Strategy), stock con reserva/liberación.
+servers:
+  - url: http://localhost:8670
+    description: Servicio directo
+  - url: http://localhost:8080
+    description: A través del gateway
+tags:
+  - name: Products
+  - name: Categories
+paths:
+  /api/catalog/v1/products:
+    get:
+      operationId: searchProducts
+      tags: [Products]
+      summary: Busca productos por criterios
+      parameters:
+        - name: name
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: categoryId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: minPrice
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: maxPrice
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/ProductStatus' }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Página de productos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductPage' }
+    post:
+      operationId: createProduct
+      tags: [Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateProductRequest' }
+      responses:
+        '201':
+          description: Producto creado
+          headers:
+            Location: { schema: { type: string, format: uri } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/catalog/v1/products/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      operationId: getProduct
+      tags: [Products]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      operationId: updateProduct
+      tags: [Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProductRequest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: deleteProduct
+      tags: [Products]
+      responses:
+        '204': { description: Eliminado }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/catalog/v1/products/{id}/stock/adjust:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: adjustStock
+      tags: [Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StockQuantityRequest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+  /api/catalog/v1/products/{id}/stock/reserve:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: reserveStock
+      tags: [Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StockQuantityRequest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/catalog/v1/products/{id}/stock/release:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: releaseStock
+      tags: [Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StockQuantityRequest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductResponse' }
+  /api/catalog/v1/categories:
+    get:
+      operationId: listCategories
+      tags: [Categories]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CategoryResponse' }
+    post:
+      operationId: createCategory
+      tags: [Categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCategoryRequest' }
+      responses:
+        '201':
+          description: Categoría creada
+          headers:
+            Location: { schema: { type: string, format: uri } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryResponse' }
+  /api/catalog/v1/categories/{id}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getCategory
+      tags: [Categories]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: deleteCategory
+      tags: [Categories]
+      responses:
+        '204': { description: Eliminada }
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    Size:
+      name: size
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+  schemas:
+    ProductStatus:
+      type: string
+      enum: [ACTIVE, INACTIVE, DISCONTINUED]
+    Money:
+      type: object
+      properties:
+        amount: { type: number, format: decimal }
+        currency: { type: string }
+    CreateProductRequest:
+      type: object
+      required: [sku, name, price, currency]
+      properties:
+        sku: { type: string, maxLength: 64 }
+        name: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        price: { type: number, minimum: 0 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        categoryId: { type: string, format: uuid, nullable: true }
+        initialStock: { type: integer, minimum: 0, default: 0 }
+    UpdateProductRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        price: { type: number, minimum: 0 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        categoryId: { type: string, format: uuid, nullable: true }
+        status: { $ref: '#/components/schemas/ProductStatus' }
+    ProductResponse:
+      type: object
+      required: [id, sku, name, price, currency, status, stockQuantity, reservedQuantity, availableQuantity, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        sku: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        price: { type: number }
+        currency: { type: string }
+        categoryId: { type: string, format: uuid, nullable: true }
+        status: { $ref: '#/components/schemas/ProductStatus' }
+        stockQuantity: { type: integer }
+        reservedQuantity: { type: integer }
+        availableQuantity: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ProductPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items: { $ref: '#/components/schemas/ProductResponse' }
+        page: { type: integer, minimum: 0 }
+        size: { type: integer, minimum: 1 }
+        totalElements: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+    StockQuantityRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity: { type: integer, minimum: 1 }
+    CreateCategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 100 }
+        description: { type: string, maxLength: 500 }
+    CategoryResponse:
+      type: object
+      required: [id, name, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Problem:
+      $ref: '../users-v1.yaml#/components/schemas/Problem'
+    ValidationError:
+      $ref: '../users-v1.yaml#/components/schemas/ValidationError'
+  responses:
+    BadRequest:
+      description: Petición inválida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Conflicto
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
