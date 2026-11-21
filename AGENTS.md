@@ -3,26 +3,30 @@ Before responding to any non-trivial API engineering task — designing, impleme
 </API_TASKS>
 
 ## Project
-- Spring Boot 4.1.1 (Gradle Kotlin DSL), Java 21 toolchain, root project `portfolio` (`settings.gradle.kts`)
-- Package base `com.casl.portfolio`; main `PortfolioApplication` in `src/main/java/com/casl/portfolio/`
-- Config: `src/main/resources/application.yaml` (app name/title/version, docker compose disabled, `Server.port: 8666`)
+- Spring Boot 4.1.2 (Gradle Kotlin DSL), Java 21, monorepo root `casl` (`settings.gradle.kts`)
+- Modules under `services/casl-*`; current: `services/casl-users-service` (package `com.casl.users`, main `UsersServiceApplication`)
+- Shared build conventions: `buildSrc` plugin `casl-spring-boot-service`; versions in `gradle/libs.versions.toml`; ADRs in `docs/architecture/decisions/`
+- Config: `services/casl-users-service/src/main/resources/application.yaml` (`casl-users-service`, `server.port: 8666`, actuator health expuesto)
+- Java 21 toolchain enforced by the `buildSrc` convention plugin
 
 ## Build & run
 - Use wrapper: `./gradlew` (Unix) or `gradlew.bat` (Windows)
-- Common: `./gradlew build`, `./gradlew test`, `./gradlew bootRun`
-- Logging uses Log4j2 (`spring-boot-starter-log4j2`) with default logging excluded; config `log4j2-spring.xml` present
-- Dev: `spring-boot-devtools` included; Docker Compose support present but `compose.yaml` is empty (see `HELP.md`)
+- Common: `./gradlew build`, `./gradlew test`, `./gradlew :services:casl-users-service:bootRun`
+- Image (buildpacks): `./gradlew :services:casl-users-service:bootBuildImage` → `casl/casl-users-service:0.0.1-SNAPSHOT`
+- Local infra: `docker compose --profile core up -d` (PostgreSQL 17 + service). Do not use `spring-boot-docker-compose` starters; compose is managed manually
+- Logging uses Log4j2 (`spring-boot-starter-log4j2`) with default logging excluded by the convention plugin; config `log4j2-spring.xml`
+- Dev: `spring-boot-devtools` included as `developmentOnly`
 
 ## API
-- Base path: `@RequestMapping("/rest-api/v1/crud")` in `PortfolioController`
-- Endpoints: `GET /user/{userId}?id={Long}` returns JSON; `POST/PUT/DELETE /user` return strings (stubs)
-- Models in `models/` (request/operations/users)
+- Base path: `@RequestMapping("/rest-api/v1/crud")` in `UserController`
+- Endpoints: `GET /user/{userId}?id={Long}` returns JSON; `POST /portfolio`, `PUT/DELETE /user` return strings (stubs; contract redesign in Phase 1)
+- Models in `com.casl.users.models` (`users`, `request`)
 
 ## Tests
-- JUnit Platform via `useJUnitPlatform()`
-- `@SpringBootTest` context test (`PortfolioApplicationTests.contextLoads()`)
-- `@WebMvcTest(PortfolioController.class)` with MockMvc in `PortfolioControllerTest`
-- Run all: `./gradlew test`. Run single class: `./gradlew test --tests com.casl.portfolio.controller.PortfolioControllerTest`
+- JUnit Platform via `useJUnitPlatform()`; coverage gate 50% LINE (convention plugin)
+- `@SpringBootTest` context test (`UsersServiceApplicationTests.contextLoads()`)
+- `@WebMvcTest(UserController.class)` with MockMvc in `UserControllerTest`; requires `spring-boot-starter-webmvc-test` (Boot 4)
+- Run all: `./gradlew test`. Run single class: `./gradlew :services:casl-users-service:test --tests com.casl.users.controller.UserControllerTest`
 
 ## Notes
 - Lombok used (compile/test annotation processors)

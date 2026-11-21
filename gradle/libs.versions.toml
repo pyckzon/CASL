@@ -1,0 +1,20 @@
+[versions]
+springBoot = "4.1.2"
+dependencyManagement = "1.1.7"
+springCloud = "2025.1.4"  # reservado para Fase 4/7
+java = "21"
+lombok = "1.18.36"
+
+[libraries]
+spring-boot-starter-webmvc = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc", version.ref = "springBoot" }
+spring-boot-starter-log4j2 = { group = "org.springframework.boot", name = "spring-boot-starter-log4j2", version.ref = "springBoot" }
+spring-boot-starter-webmvc-test = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc-test", version.ref = "springBoot" }
+spring-boot-starter-actuator = { group = "org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "springBoot" }
+spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
+spring-boot-devtools = { group = "org.springframework.boot", name = "spring-boot-devtools", version.ref = "springBoot" }
+lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+spring-boot-configuration-processor = { group = "org.springframework.boot", name = "spring-boot-configuration-processor", version.ref = "springBoot" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+dependency-management = { id = "io.spring.dependency-management", version.ref = "dependencyManagement" }

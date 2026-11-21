@@ -3,5 +3,153 @@
   "compaction": {
     "auto": true,
     "prune": true
+  },
+  "default_agent": "architect",
+
+  "agents": {
+    "architect": {
+      "mode": "primary",
+      "permissions": [
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "subagent",
+          "resource": "developer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "reviewer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "researcher",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "devops",
+          "effect": "allow"
+        }
+      ]
+    },
+
+    "developer": {
+      "mode": "subagent",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": ".github/**",
+          "effect": "deny"
+        },
+        {
+          "action": "edit",
+          "resource": "k8s/**",
+          "effect": "deny"
+        },
+        {
+          "action": "edit",
+          "resource": "helm/**",
+          "effect": "deny"
+        },
+        {
+          "action": "edit",
+          "resource": "terraform/**",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
+    },
+
+    "reviewer": {
+      "mode": "subagent",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
+    },
+
+    "researcher": {
+      "mode": "subagent",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
+    },
+
+    "devops": {
+      "mode": "subagent",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "edit",
+          "resource": ".github/**",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "Dockerfile*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "docker-compose*",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "compose*.yaml",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "k8s/**",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "helm/**",
+          "effect": "allow"
+        },
+        {
+          "action": "edit",
+          "resource": "terraform/**",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
+    }
   }
 }

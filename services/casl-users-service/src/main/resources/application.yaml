@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: casl-users-service
+    title: CASL - Users Service
+    version: 1.0.0
+server:
+  port: 8666
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
