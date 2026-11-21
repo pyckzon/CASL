@@ -73,3 +73,32 @@ jobs:
           name: integration-test-report
           path: "**/build/reports/tests/integrationTest/"
           if-no-files-found: ignore
+
+  trivy:
+    name: trivy image scan (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Medición en Fase 2.3: reporta, no bloquea. Se vuelve bloqueante
+    # en Fase 3 si el ruido y la duración son aceptables.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build users image
+        run: ./gradlew :services:casl-users-service:bootBuildImage --no-daemon
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: 'casl/casl-users-service:0.0.1-SNAPSHOT'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
