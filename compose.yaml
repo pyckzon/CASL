@@ -1,1 +1,47 @@
-services: {}
+name: casl
+
+services:
+  # ========================================================================
+  # Perfil: core
+  # ========================================================================
+
+  postgres-users:
+    profiles:
+      - core
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: casl_users
+      POSTGRES_USER: casl
+      POSTGRES_PASSWORD: casl_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_users_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_users"]
+      interval: 5s
+      retries: 10
+
+  casl-users-service:
+    profiles:
+      - core
+    image: casl/casl-users-service:0.0.1-SNAPSHOT
+    depends_on:
+      postgres-users:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8666
+    ports:
+      - "8666:8666"
+    # Sin healthcheck de contenedor: la imagen buildpacks no incluye shell
+    # ni curl/wget (exec: "sh": executable file not found). El health de la
+    # app se expone en /actuator/health. El healthcheck de contenedor se
+    # implementará en Kubernetes (Fase 7).
+
+  # ========================================================================
+  # Perfil: observability (reservado: Prometheus, Grafana, Loki, Tempo)
+  # Perfil: cloud (reservado: Kafka, Keycloak, Config, Discovery)
+  # ========================================================================
+
+volumes:
+  pg_users_data:
