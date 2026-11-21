@@ -95,7 +95,7 @@ jobs:
         run: ./gradlew :services:casl-users-service:bootBuildImage --no-daemon
 
       - name: Trivy scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: 'casl/casl-users-service:0.0.1-SNAPSHOT'
           format: 'table'
