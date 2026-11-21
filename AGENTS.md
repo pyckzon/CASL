@@ -18,8 +18,11 @@ Before responding to any non-trivial API engineering task — designing, impleme
 - Dev: `spring-boot-devtools` included as `developmentOnly`
 
 ## API
-- Base path: `@RequestMapping("/rest-api/v1/crud")` in `UserController`
-- Endpoints: `GET /user/{userId}?id={Long}` returns JSON; `POST /portfolio`, `PUT/DELETE /user` return strings (stubs; contract redesign in Phase 1)
+- Base path: `/api/users/v1/users` (gateway: `http://localhost:8080/api/users/**` → `casl-users-service`)
+- Endpoints: `POST` (201+Location), `GET /{id}`, `GET` (paginado, filtros `status`/`email`), `PUT /{id}`, `DELETE /{id}` (204)
+- Errores en `application/problem+json` (RFC 9457) con `code` estable (`USER_NOT_FOUND`, `USER_EMAIL_ALREADY_EXISTS`, `VALIDATION_ERROR`, `MALFORMED_REQUEST`, `NOT_FOUND`)
+- Contrato: `postman/specs/users-v1.yaml` (OpenAPI 3.1); colección Postman en Fase 2
+- Legado `/rest-api/v1/crud` eliminado en Fase 1
 - Models in `com.casl.users.models` (`users`, `request`)
 
 ## Tests
