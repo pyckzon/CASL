@@ -1,0 +1,53 @@
+version: 2
+
+updates:
+  # Gradle: dependencias de buildSrc y de todos los módulos.
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Bogota
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      spring:
+        patterns:
+          - "org.springframework*"
+          - "io.spring*"
+      testing:
+        patterns:
+          - "org.junit*"
+          - "org.mockito*"
+          - "org.assertj*"
+          - "org.testcontainers*"
+
+  # GitHub Actions: mantiene los workflows al día (incluido CodeQL).
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  # Imágenes de compose.yaml (PostgreSQL, etc.).
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - docker
+    commit-message:
+      prefix: "chore(deps)"
