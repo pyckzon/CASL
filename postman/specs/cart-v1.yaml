@@ -1,0 +1,164 @@
+openapi: 3.1.0
+info:
+  title: CASL Cart API
+  version: 1.0.0
+  summary: Carrito de compras (almacenado en Redis)
+servers:
+  - url: http://localhost:8671
+    description: Servicio directo
+  - url: http://localhost:8080
+    description: A través del gateway
+tags:
+  - name: Carts
+paths:
+  /api/cart/v1/carts:
+    post:
+      operationId: createCart
+      tags: [Carts]
+      parameters:
+        - name: userId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '201':
+          description: Carrito creado
+          headers:
+            Location: { schema: { type: string, format: uri } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+  /api/cart/v1/carts/{cartId}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getCart
+      tags: [Carts]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: clearCart
+      tags: [Carts]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+  /api/cart/v1/carts/{cartId}/items:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: addItem
+      tags: [Carts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddItemRequest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/cart/v1/carts/{cartId}/items/{productId}:
+    parameters: [ { $ref: '#/components/parameters/Id' }, { name: productId, in: path, required: true, schema: { type: string, format: uuid } } ]
+    put:
+      operationId: updateQuantity
+      tags: [Carts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateQuantityRequest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+    delete:
+      operationId: removeItem
+      tags: [Carts]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+  /api/cart/v1/carts/{cartId}/merge:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: mergeCarts
+      tags: [Carts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MergeCartRequest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartResponse' }
+components:
+  parameters:
+    Id:
+      name: cartId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    AddItemRequest:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        sku: { type: string }
+        quantity: { type: integer, minimum: 1, default: 1 }
+    UpdateQuantityRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity: { type: integer, minimum: 0 }
+    MergeCartRequest:
+      type: object
+      required: [sourceCartId]
+      properties:
+        sourceCartId: { type: string, format: uuid }
+    CartItemResponse:
+      type: object
+      required: [productId, sku, name, unitPrice, currency, quantity, lineTotal]
+      properties:
+        productId: { type: string, format: uuid }
+        sku: { type: string }
+        name: { type: string }
+        unitPrice: { type: number }
+        currency: { type: string }
+        quantity: { type: integer }
+        lineTotal: { type: number }
+    CartResponse:
+      type: object
+      required: [cartId, items, totalItems, totalAmount, createdAt, updatedAt]
+      properties:
+        cartId: { type: string, format: uuid }
+        userId: { type: string, format: uuid, nullable: true }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItemResponse' }
+        totalItems: { type: integer }
+        totalAmount: { type: number }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Problem:
+      $ref: '../users-v1.yaml#/components/schemas/Problem'
+  responses:
+    NotFound:
+      description: Carrito no encontrado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Producto no disponible
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
