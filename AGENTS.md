@@ -4,7 +4,7 @@ Before responding to any non-trivial API engineering task — designing, impleme
 
 ## Project
 - Spring Boot 4.1.2 (Gradle Kotlin DSL), Java 21, monorepo root `casl` (`settings.gradle.kts`)
-- Modules under `services/casl-*`; current: `services/casl-users-service` (package `com.casl.users`, main `UsersServiceApplication`), `services/casl-catalog-service` (package `com.casl.catalog`, main `CatalogServiceApplication`), `services/casl-gateway` (package `com.casl.gateway`, main `GatewayApplication`)
+- Modules under `services/casl-*`; current: `services/casl-users-service` (package `com.casl.users`, main `UsersServiceApplication`), `services/casl-catalog-service` (package `com.casl.catalog`, main `CatalogServiceApplication`), `services/casl-cart-service` (package `com.casl.cart`, main `CartServiceApplication`), `services/casl-gateway` (package `com.casl.gateway`, main `GatewayApplication`)
 - Shared build conventions: `buildSrc` plugin `casl-spring-boot-service`; versions in `gradle/libs.versions.toml`; ADRs in `docs/architecture/decisions/`
 - Config: `services/casl-users-service/src/main/resources/application.yaml` (`casl-users-service`, `server.port: 8666`, actuator health expuesto)
 - Java 21 toolchain enforced by the `buildSrc` convention plugin
