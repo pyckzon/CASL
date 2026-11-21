@@ -1,10 +1,25 @@
 spring:
   application:
     name: casl-users-service
-    title: CASL - Users Service
-    version: 1.0.0
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/casl_users}
+    username: ${SPRING_DATASOURCE_USERNAME:casl}
+    password: ${SPRING_DATASOURCE_PASSWORD:casl_dev}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
 server:
   port: 8666
+
 management:
   endpoints:
     web:

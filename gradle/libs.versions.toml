@@ -4,16 +4,27 @@ dependencyManagement = "1.1.7"
 springCloud = "2025.1.4"  # reservado para Fase 4/7
 java = "21"
 lombok = "1.18.36"
+archunit = "1.5.1"
 
 [libraries]
 spring-boot-starter-webmvc = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc", version.ref = "springBoot" }
+spring-boot-starter-data-jpa = { group = "org.springframework.boot", name = "spring-boot-starter-data-jpa", version.ref = "springBoot" }
+spring-boot-starter-validation = { group = "org.springframework.boot", name = "spring-boot-starter-validation", version.ref = "springBoot" }
 spring-boot-starter-log4j2 = { group = "org.springframework.boot", name = "spring-boot-starter-log4j2", version.ref = "springBoot" }
 spring-boot-starter-webmvc-test = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc-test", version.ref = "springBoot" }
 spring-boot-starter-actuator = { group = "org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "springBoot" }
+spring-boot-flyway = { group = "org.springframework.boot", name = "spring-boot-flyway", version.ref = "springBoot" }
 spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
 spring-boot-devtools = { group = "org.springframework.boot", name = "spring-boot-devtools", version.ref = "springBoot" }
-lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
 spring-boot-configuration-processor = { group = "org.springframework.boot", name = "spring-boot-configuration-processor", version.ref = "springBoot" }
+spring-boot-testcontainers = { group = "org.springframework.boot", name = "spring-boot-testcontainers", version.ref = "springBoot" }
+lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+flyway-core = { group = "org.flywaydb", name = "flyway-core" }
+flyway-database-postgresql = { group = "org.flywaydb", name = "flyway-database-postgresql" }
+postgresql = { group = "org.postgresql", name = "postgresql" }
+testcontainers-postgresql = { group = "org.testcontainers", name = "testcontainers-postgresql" }
+testcontainers-junit-jupiter = { group = "org.testcontainers", name = "testcontainers-junit-jupiter" }
+archunit-junit5 = { group = "com.tngtech.archunit", name = "archunit-junit5", version.ref = "archunit" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
