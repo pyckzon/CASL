@@ -1,0 +1,418 @@
+openapi: 3.1.0
+info:
+  title: CASL Users API
+  version: 1.0.0
+  summary: Gestión de usuarios de la plataforma CASL
+  description: |
+    Contrato del servicio de usuarios. Fuente de verdad para implementación,
+    tests de contrato y colección Postman.
+
+    Convenciones:
+    - Versionado en la ruta (`/v1`). Cambios incompatibles crean `/v2`.
+    - Errores en `application/problem+json` (RFC 9457) con extensión `code`.
+    - Paginación page/size (0-based), `size` máximo 100.
+  contact:
+    name: CASL
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8666
+    description: Servicio directo (desarrollo)
+  - url: http://localhost:8080
+    description: A través del gateway (Fase 1b)
+
+tags:
+  - name: Users
+    description: Alta, consulta, actualización y baja de usuarios
+
+paths:
+  /api/users/v1/users:
+    get:
+      operationId: listUsers
+      tags: [Users]
+      summary: Lista usuarios paginados
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Size'
+        - name: status
+          in: query
+          required: false
+          description: Filtra por estado
+          schema:
+            $ref: '#/components/schemas/UserStatus'
+        - name: email
+          in: query
+          required: false
+          description: Filtra por email exacto (insensible a mayúsculas)
+          schema:
+            type: string
+            format: email
+            maxLength: 320
+      responses:
+        '200':
+          description: Página de usuarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+              examples:
+                empty:
+                  summary: Sin resultados
+                  value:
+                    content: []
+                    page: 0
+                    size: 20
+                    totalElements: 0
+                    totalPages: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      operationId: createUser
+      tags: [Users]
+      summary: Crea un usuario
+      description: |
+        El email se normaliza a minúsculas y debe ser único.
+        No es idempotente: un reintento con el mismo email devuelve 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+            examples:
+              minimal:
+                summary: Datos mínimos
+                value:
+                  email: ana@example.com
+                  firstName: Ana
+                  lastName: Pérez
+              full:
+                summary: Con teléfono
+                value:
+                  email: ana@example.com
+                  firstName: Ana
+                  lastName: Pérez
+                  phone: "+57 300 1234567"
+      responses:
+        '201':
+          description: Usuario creado
+          headers:
+            Location:
+              description: URI del recurso creado
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/v1/users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      operationId: getUser
+      tags: [Users]
+      summary: Obtiene un usuario por id
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      operationId: replaceUser
+      tags: [Users]
+      summary: Reemplaza un usuario
+      description: |
+        Reemplazo completo de los campos mutables. Idempotente: repetir la
+        misma petición produce el mismo estado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+            examples:
+              full:
+                value:
+                  email: ana@example.com
+                  firstName: Ana María
+                  lastName: Pérez
+                  phone: "+57 300 7654321"
+                  status: ACTIVE
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      operationId: deleteUser
+      tags: [Users]
+      summary: Elimina un usuario
+      responses:
+        '204':
+          description: Usuario eliminado (sin cuerpo)
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      description: Identificador del usuario
+      schema:
+        type: string
+        format: uuid
+    Page:
+      name: page
+      in: query
+      required: false
+      description: Número de página (0-based)
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Size:
+      name: size
+      in: query
+      required: false
+      description: Tamaño de página
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    UserStatus:
+      type: string
+      description: Estado del usuario
+      enum: [ACTIVE, INACTIVE]
+
+    CreateUserRequest:
+      type: object
+      additionalProperties: false
+      required: [email, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        phone:
+          type: [string, 'null']
+          maxLength: 30
+
+    UpdateUserRequest:
+      type: object
+      additionalProperties: false
+      required: [email, firstName, lastName, status]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        phone:
+          type: [string, 'null']
+          maxLength: 30
+        status:
+          $ref: '#/components/schemas/UserStatus'
+
+    UserResponse:
+      type: object
+      additionalProperties: false
+      required: [id, email, firstName, lastName, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: [string, 'null']
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserPage:
+      type: object
+      additionalProperties: false
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+
+    ValidationError:
+      type: object
+      additionalProperties: false
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: Ruta del campo inválido (dot notation)
+        message:
+          type: string
+          description: Mensaje legible para humanos
+
+    Problem:
+      type: object
+      description: Error RFC 9457 con extensión `code` estable
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 100
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          description: Código estable legible por máquina
+          examples: [USER_NOT_FOUND, USER_EMAIL_ALREADY_EXISTS, VALIDATION_ERROR]
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+      additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: Petición inválida o validación fallida
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            validation:
+              value:
+                type: https://errors.casl.dev/validation-error
+                title: Validation failed
+                status: 400
+                detail: One or more fields are invalid
+                instance: /api/users/v1/users
+                code: VALIDATION_ERROR
+                errors:
+                  - field: email
+                    message: must be a well-formed email address
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            user:
+              value:
+                type: https://errors.casl.dev/user-not-found
+                title: User not found
+                status: 404
+                detail: No user with id 3f1c2a7e-0000-0000-0000-000000000000
+                instance: /api/users/v1/users/3f1c2a7e-0000-0000-0000-000000000000
+                code: USER_NOT_FOUND
+    Conflict:
+      description: Conflicto con el estado actual del recurso
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            emailTaken:
+              value:
+                type: https://errors.casl.dev/user-email-already-exists
+                title: Email already registered
+                status: 409
+                detail: The email ana@example.com is already registered
+                instance: /api/users/v1/users
+                code: USER_EMAIL_ALREADY_EXISTS
+    InternalError:
+      description: Error interno no esperado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            generic:
+              value:
+                type: about:blank
+                title: Internal Server Error
+                status: 500
+                code: INTERNAL_ERROR
