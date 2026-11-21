@@ -28,15 +28,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Unit tests + coverage gate
-        run: ./gradlew check -x integrationTest --no-daemon
+      - name: Unit tests
+        run: ./gradlew test --no-daemon
 
-      - name: Upload coverage report
+      - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
-          path: "**/build/reports/jacoco/"
+          name: unit-test-report
+          path: "**/build/reports/tests/test/"
           if-no-files-found: ignore
 
   integration:
@@ -54,8 +54,17 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       # ubuntu-latest trae Docker: Testcontainers funciona sin configuración extra.
-      - name: Integration tests (Testcontainers)
-        run: ./gradlew integrationTest --no-daemon
+      # El gate de cobertura se evalúa aquí porque suma unitarios + integración.
+      - name: Integration tests + coverage gate
+        run: ./gradlew test integrationTest jacocoTestCoverageVerification --no-daemon
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: "**/build/reports/jacoco/"
+          if-no-files-found: ignore
 
       - name: Upload integration test report
         if: always()

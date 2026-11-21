@@ -2,8 +2,10 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
+            <!-- %pii es un converter propio (registrado por el annotation processor
+                 de Log4j2) que enmascara emails y teléfonos etiquetados. -->
             <PatternLayout
-                    pattern="%d{HH:mm:ss.SSS} [%t] %highlight{%-5level}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=blue} %logger{36} - %msg%n"/>
+                    pattern="%d{HH:mm:ss.SSS} [%t] %highlight{%-5level}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=blue} %logger{36} - %pii%n"/>
         </Console>
     </Appenders>
     <Loggers>

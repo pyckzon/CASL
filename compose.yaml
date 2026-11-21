@@ -31,6 +31,9 @@ services:
         condition: service_healthy
     environment:
       SERVER_PORT: 8666
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-users:5432/casl_users
+      SPRING_DATASOURCE_USERNAME: casl
+      SPRING_DATASOURCE_PASSWORD: casl_dev
     ports:
       - "8666:8666"
     # Sin healthcheck de contenedor: la imagen buildpacks no incluye shell
@@ -42,6 +45,18 @@ services:
   # Perfil: observability (reservado: Prometheus, Grafana, Loki, Tempo)
   # Perfil: cloud (reservado: Kafka, Keycloak, Config, Discovery)
   # ========================================================================
+
+  casl-gateway:
+    profiles:
+      - core
+    image: casl/casl-gateway:0.0.1-SNAPSHOT
+    depends_on:
+      - casl-users-service
+    environment:
+      SERVER_PORT: 8080
+      USERS_SERVICE_URI: http://casl-users-service:8666
+    ports:
+      - "8080:8080"
 
 volumes:
   pg_users_data:

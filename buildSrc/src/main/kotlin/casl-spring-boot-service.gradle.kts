@@ -27,6 +27,9 @@ configurations.configureEach {
 dependencies {
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
+	// Genera Log4j2Plugins.dat para registrar plugins propios (@Plugin) sin
+	// depender del escaneo de paquetes, que está deprecado.
+	annotationProcessor("org.apache.logging.log4j:log4j-core")
 	testCompileOnly("org.projectlombok:lombok")
 	testAnnotationProcessor("org.projectlombok:lombok")
 }
@@ -71,6 +74,7 @@ tasks.jacocoTestReport {
 
 tasks.jacocoTestCoverageVerification {
 	executionData(tasks.named("test").get(), integrationTest.get())
+	mustRunAfter(tasks.named("test"), integrationTest)
 	violationRules {
 		rule {
 			limit {
@@ -83,5 +87,5 @@ tasks.jacocoTestCoverageVerification {
 }
 
 tasks.check {
-	dependsOn(integrationTest)
+	dependsOn(integrationTest, tasks.named("jacocoTestCoverageVerification"))
 }
