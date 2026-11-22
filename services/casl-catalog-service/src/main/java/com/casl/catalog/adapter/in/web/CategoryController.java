@@ -5,6 +5,7 @@ import com.casl.catalog.application.port.in.CategoryUseCase;
 import com.casl.catalog.domain.model.Category;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +31,7 @@ public class CategoryController {
 	}
 
 	@PostMapping
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<CategoryResponse> create(@Valid @RequestBody CreateCategoryRequest request) {
 		Category created = useCase.create(new CreateCategoryCommand(request.name(), request.description()));
 		return ResponseEntity.created(URI.create(BASE + created.id()))
@@ -38,6 +40,7 @@ public class CategoryController {
 	}
 
 	@GetMapping("/{id}")
+	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	public CategoryResponse get(@PathVariable UUID id) {
 		Category category = useCase.getById(id);
 		return new CategoryResponse(category.id(), category.name(), category.description(), category.createdAt(),
@@ -45,6 +48,7 @@ public class CategoryController {
 	}
 
 	@GetMapping
+	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	public List<CategoryResponse> list() {
 		return useCase.list().stream()
 				.map(c -> new CategoryResponse(c.id(), c.name(), c.description(), c.createdAt(), c.updatedAt()))
@@ -52,6 +56,7 @@ public class CategoryController {
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Void> delete(@PathVariable UUID id) {
 		useCase.delete(id);
 		return ResponseEntity.noContent().build();

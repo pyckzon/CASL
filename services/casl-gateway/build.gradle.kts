@@ -24,6 +24,8 @@ dependencies {
 
 	testImplementation(libs.spring.boot.starter.test)
 	testImplementation(libs.spring.boot.starter.webmvc.test)
+	testImplementation(libs.spring.security.test)
+	testImplementation(libs.spring.boot.security.test)
 }
 
 tasks.named<BootBuildImage>("bootBuildImage") {

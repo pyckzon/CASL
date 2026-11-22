@@ -11,6 +11,12 @@ info:
     - Versionado en la ruta (`/v1`). Cambios incompatibles crean `/v2`.
     - Errores en `application/problem+json` (RFC 9457) con extensión `code`.
     - Paginación page/size (0-based), `size` máximo 100.
+
+    Autenticación (Fase 5):
+    - Todas las operaciones requieren `Authorization: Bearer <JWT>` emitido por Keycloak.
+    - Sin token válido: `401` con `code: UNAUTHORIZED`.
+    - El rol `USER` puede leer; crear, actualizar y borrar requieren `ADMIN`.
+    - Rol insuficiente: `403` con `code: ACCESS_DENIED`.
   contact:
     name: CASL
   license:
@@ -21,6 +27,9 @@ servers:
     description: Servicio directo (desarrollo)
   - url: http://localhost:8080
     description: A través del gateway (Fase 1b)
+
+security:
+  - bearerAuth: []
 
 tags:
   - name: Users
@@ -186,6 +195,12 @@ paths:
           $ref: '#/components/responses/InternalError'
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token JWT emitido por Keycloak (realm `casl`)
   parameters:
     UserId:
       name: id

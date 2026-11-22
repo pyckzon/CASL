@@ -21,14 +21,15 @@ Before responding to any non-trivial API engineering task — designing, impleme
 - Users: base path `/api/users/v1/users` (gateway `http://localhost:8080/api/users/**`)
 - Catalog: base path `/api/catalog/v1/products`, `/api/catalog/v1/categories` (gateway `http://localhost:8080/api/catalog/**`)
 - Errores en `application/problem+json` (RFC 9457) con `code` estable
+- Seguridad (Fase 5): Keycloak 26.8 (realm `casl`, puerto 8180) emite JWT; gateway, users y catalog validan el token (resource server, deny-by-default). Roles `USER` (lectura) y `ADMIN` (escritura). 401 `UNAUTHORIZED` / 403 `ACCESS_DENIED` en problem+json. Gateway propaga `X-User-Id` con el `sub` del JWT
 - Contratos: `postman/specs/users-v1.yaml`, `postman/specs/catalog-v1.yaml` (OpenAPI 3.1)
 - Models in `com.casl.users.models` (`users`, `request`)
 
 ## Tests
 - JUnit Platform via `useJUnitPlatform()`; coverage gate 50% LINE (convention plugin)
-- `@SpringBootTest` context test (`UsersServiceApplicationTests.contextLoads()`)
-- `@WebMvcTest(UserController.class)` with MockMvc in `UserControllerTest`; requires `spring-boot-starter-webmvc-test` (Boot 4)
-- Run all: `./gradlew test`. Run single class: `./gradlew :services:casl-users-service:test --tests com.casl.users.controller.UserControllerTest`
+- `@WebMvcTest` slices exclude `SecurityAutoConfiguration`, `ServletWebSecurityAutoConfiguration` y las de OAuth2 resource server, con `@AutoConfigureMockMvc(addFilters = false)`; la autorización se prueba aparte (`UserSecurityTest`, `ProductSecurityTest`, `GatewaySecurityTest`)
+- Tests de integración (`src/integrationTest`, Testcontainers) usan `@SpringBootTest` + `@AutoConfigureMockMvc` y `@WithMockUser(roles = "ADMIN")`
+- Run all: `./gradlew test`. Run single class: `./gradlew :services:casl-users-service:test --tests com.casl.users.adapter.in.web.UserControllerTest`
 
 ## Notes
 - Lombok used (compile/test annotation processors)
