@@ -24,11 +24,9 @@ dependencies {
 	testImplementation(libs.archunit.junit5)
 	testImplementation(libs.testcontainers.junit.jupiter)
 	testImplementation(libs.testcontainers.postgresql)
-	testImplementation("org.testcontainers:kafka:2.0.5")
 
 	integrationTestImplementation(libs.spring.boot.testcontainers)
 	integrationTestImplementation(libs.testcontainers.postgresql)
-	integrationTestImplementation("org.testcontainers:kafka:2.0.5")
 }
 
 tasks.named<BootBuildImage>("bootBuildImage") {
