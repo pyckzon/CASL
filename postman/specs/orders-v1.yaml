@@ -1,0 +1,140 @@
+openapi: 3.1.0
+info:
+  title: CASL Orders API
+  version: 1.0.0
+  summary: Ordenes y pagos (saga sincrona)
+servers:
+  - url: http://localhost:8672
+    description: Servicio directo
+  - url: http://localhost:8080
+    description: A traves del gateway
+tags:
+  - name: Orders
+paths:
+  /api/orders/v1/orders:
+    post:
+      operationId: createOrder
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateOrderRequest' }
+      responses:
+        '201':
+          description: Orden creada
+          headers:
+            Location: { schema: { type: string, format: uri } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+    get: { operationId: notImplemented, responses: { '501': { description: Not implemented } } }
+  /api/orders/v1/orders/{orderId}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getOrder
+      tags: [Orders]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/orders/v1/orders/{orderId}/pay:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: payOrder
+      tags: [Orders]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+  /api/orders/v1/orders/{orderId}/cancel:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: cancelOrder
+      tags: [Orders]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponse' }
+components:
+  parameters:
+    Id:
+      name: orderId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    OrderStatus:
+      type: string
+      enum: [CREATED, PAYMENT_PENDING, PAID, PAYMENT_FAILED, CANCELLED, SHIPPED, DELIVERED]
+    OrderLineRequest:
+      type: object
+      required: [productId, sku, name, unitPrice, currency, quantity]
+      properties:
+        productId: { type: string, format: uuid }
+        sku: { type: string }
+        name: { type: string }
+        unitPrice: { type: number, minimum: 0 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        quantity: { type: integer, minimum: 1 }
+    CreateOrderRequest:
+      type: object
+      required: [items]
+      properties:
+        userId: { type: string, format: uuid, nullable: true }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/OrderLineRequest' }
+    OrderLineResponse:
+      type: object
+      required: [productId, sku, name, unitPrice, currency, quantity, lineTotal]
+      properties:
+        productId: { type: string, format: uuid }
+        sku: { type: string }
+        name: { type: string }
+        unitPrice: { type: number }
+        currency: { type: string }
+        quantity: { type: integer }
+        lineTotal: { type: number }
+    OrderResponse:
+      type: object
+      required: [orderId, status, totalAmount, currency, lines, createdAt, updatedAt]
+      properties:
+        orderId: { type: string, format: uuid }
+        userId: { type: string, format: uuid, nullable: true }
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        totalAmount: { type: number }
+        currency: { type: string }
+        paymentId: { type: string, format: uuid, nullable: true }
+        failureReason: { type: string, nullable: true }
+        lines:
+          type: array
+          items: { $ref: '#/components/schemas/OrderLineResponse' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Problem:
+      $ref: '../users-v1.yaml#/components/schemas/Problem'
+  responses:
+    BadRequest:
+      description: Petición inválida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Orden no encontrada
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
