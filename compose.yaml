@@ -57,6 +57,7 @@ services:
       USERS_SERVICE_URI: http://casl-users-service:8666
       CATALOG_SERVICE_URI: http://casl-catalog-service:8670
       CART_SERVICE_URI: http://casl-cart-service:8671
+      ORDER_SERVICE_URI: http://casl-order-service:8672
     ports:
       - "8080:8080"
 
@@ -123,6 +124,39 @@ services:
     ports:
       - "8671:8671"
 
+  casl-order-service:
+    profiles:
+      - core
+    image: casl/casl-order-service:0.0.1-SNAPSHOT
+    depends_on:
+      postgres-orders:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8672
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-orders:5432/casl_orders
+      SPRING_DATASOURCE_USERNAME: casl
+      SPRING_DATASOURCE_PASSWORD: casl_dev
+    ports:
+      - "8672:8672"
+
+  postgres-orders:
+    profiles:
+      - core
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: casl_orders
+      POSTGRES_USER: casl
+      POSTGRES_PASSWORD: casl_dev
+    ports:
+      - "5435:5432"
+    volumes:
+      - pg_orders_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_orders"]
+      interval: 5s
+      retries: 10
+
 volumes:
   pg_users_data:
   pg_catalog_data:
+  pg_orders_data:
