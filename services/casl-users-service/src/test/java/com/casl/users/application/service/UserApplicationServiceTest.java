@@ -26,6 +26,7 @@ class UserApplicationServiceTest {
 	private static final Instant LATER = NOW.plusSeconds(3600);
 
 	private final InMemoryUserRepository repository = new InMemoryUserRepository();
+	private final InMemoryUserIdentityRepository identities = new InMemoryUserIdentityRepository();
 	private final UserApplicationService service = serviceAt(NOW);
 
 	@Test
@@ -143,6 +144,6 @@ class UserApplicationServiceTest {
 	}
 
 	private UserApplicationService serviceAt(Instant instant) {
-		return new UserApplicationService(repository, Clock.fixed(instant, ZoneOffset.UTC));
+		return new UserApplicationService(repository, identities, Clock.fixed(instant, ZoneOffset.UTC));
 	}
 }

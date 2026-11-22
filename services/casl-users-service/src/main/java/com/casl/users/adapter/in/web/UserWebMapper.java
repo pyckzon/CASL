@@ -1,9 +1,12 @@
 package com.casl.users.adapter.in.web;
 
 import com.casl.users.application.command.CreateUserCommand;
+import com.casl.users.application.command.IdentityProfile;
 import com.casl.users.application.command.UpdateUserCommand;
 import com.casl.users.domain.model.PageResult;
 import com.casl.users.domain.model.User;
+import com.casl.users.domain.model.UserIdentity;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 
@@ -39,6 +42,34 @@ final class UserWebMapper {
 				user.status(),
 				user.createdAt(),
 				user.updatedAt());
+	}
+
+	/**
+	 * Traduce los claims del token a un comando de aplicación. El dominio nunca
+	 * ve JWT: aquí termina el anti-corruption de identidad.
+	 */
+	static IdentityProfile toProfile(Jwt jwt) {
+		String preferredUsername = jwt.getClaimAsString("preferred_username");
+		String email = jwt.getClaimAsString("email");
+		String emailLocalPart = (email != null && email.contains("@"))
+				? email.substring(0, email.indexOf('@'))
+				: null;
+		return new IdentityProfile(
+				UserIdentity.KEYCLOAK,
+				jwt.getSubject(),
+				email,
+				Boolean.TRUE.equals(jwt.getClaim("email_verified")),
+				firstNonBlank(jwt.getClaimAsString("given_name"), preferredUsername, emailLocalPart, "User"),
+				firstNonBlank(jwt.getClaimAsString("family_name"), preferredUsername, "User"));
+	}
+
+	private static String firstNonBlank(String... candidates) {
+		for (String candidate : candidates) {
+			if (candidate != null && !candidate.isBlank()) {
+				return candidate.trim();
+			}
+		}
+		throw new IllegalArgumentException("No se pudo derivar un nombre del token");
 	}
 
 	static UserPageResponse toResponse(PageResult<User> page) {

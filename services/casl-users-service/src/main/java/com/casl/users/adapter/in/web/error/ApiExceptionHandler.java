@@ -1,6 +1,8 @@
 package com.casl.users.adapter.in.web.error;
 
 import com.casl.users.domain.exception.EmailAlreadyExistsException;
+import com.casl.users.domain.exception.IdentityAlreadyExistsException;
+import com.casl.users.domain.exception.InactiveUserException;
 import com.casl.users.domain.exception.InvalidUserException;
 import com.casl.users.domain.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -108,6 +110,19 @@ public class ApiExceptionHandler {
 			HttpServletRequest request) {
 		return problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "Unsupported media type",
 				"The request content type is not supported; use application/json", request);
+	}
+
+	@ExceptionHandler(InactiveUserException.class)
+	ResponseEntity<ProblemDetail> handleInactiveUser(InactiveUserException exception, HttpServletRequest request) {
+		return problem(HttpStatus.FORBIDDEN, "USER_INACTIVE", "User inactive",
+				"The user is disabled and cannot operate", request);
+	}
+
+	@ExceptionHandler(IdentityAlreadyExistsException.class)
+	ResponseEntity<ProblemDetail> handleIdentityConflict(IdentityAlreadyExistsException exception,
+			HttpServletRequest request) {
+		return problem(HttpStatus.CONFLICT, "IDENTITY_ALREADY_LINKED", "Identity already linked",
+				"The identity is already linked to a user", request);
 	}
 
 	@ExceptionHandler(AccessDeniedException.class)

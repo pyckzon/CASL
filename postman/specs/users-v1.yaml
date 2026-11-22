@@ -15,8 +15,9 @@ info:
     Autenticación (Fase 5):
     - Todas las operaciones requieren `Authorization: Bearer <JWT>` emitido por Keycloak.
     - Sin token válido: `401` con `code: UNAUTHORIZED`.
-    - El rol `USER` puede leer; crear, actualizar y borrar requieren `ADMIN`.
-    - Rol insuficiente: `403` con `code: ACCESS_DENIED`.
+    - El rol `USER` solo puede leer su propio perfil (`GET /me`); listar o leer otros
+      usuarios y todas las escrituras requieren `ADMIN`.
+    - Rol insuficiente: `403` con `code: ACCESS_DENIED`; usuario inactivo: `403` `USER_INACTIVE`.
   contact:
     name: CASL
   license:
@@ -40,7 +41,8 @@ paths:
     get:
       operationId: listUsers
       tags: [Users]
-      summary: Lista usuarios paginados
+      summary: Lista usuarios paginados (solo ADMIN)
+      description: Requiere rol ADMIN; un usuario con rol USER consulta su perfil en `/me`.
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Size'
@@ -126,13 +128,46 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/users/v1/users/me:
+    get:
+      operationId: getCurrentUser
+      tags: [Users]
+      summary: Devuelve el perfil del usuario autenticado
+      description: |
+        Resuelve el usuario a partir del claim `sub` del token (anti-corruption de
+        identidad): reutiliza el vínculo existente, enlaza por email verificado o
+        aprovisiona el usuario en el primer acceso (just-in-time). El claim `sub`
+        nunca se expone en la respuesta.
+      responses:
+        '200':
+          description: Perfil del usuario autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Token ausente o inválido (`UNAUTHORIZED`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Usuario inactivo (`USER_INACTIVE`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/users/v1/users/{id}:
     parameters:
       - $ref: '#/components/parameters/UserId'
     get:
       operationId: getUser
       tags: [Users]
-      summary: Obtiene un usuario por id
+      summary: Obtiene un usuario por id (solo ADMIN)
+      description: Un usuario con rol USER debe usar `/me`; este endpoint expone cualquier usuario y requiere ADMIN.
       responses:
         '200':
           description: Usuario encontrado
