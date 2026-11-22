@@ -1,0 +1,82 @@
+{
+  "realm": "casl",
+  "enabled": true,
+  "displayName": "CASL E-commerce",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      { "name": "USER", "description": "Standard user" },
+      { "name": "ADMIN", "description": "Administrator" }
+    ]
+  },
+  "defaultRoles": ["USER"],
+  "clients": [
+    {
+      "clientId": "casl-gateway",
+      "name": "CASL Gateway",
+      "description": "Edge gateway (public client for browser/Postman)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "https://oauth.pstmn.io/v1/callback",
+        "http://localhost:*"
+      ],
+      "webOrigins": ["http://localhost:8080", "http://localhost:3000", "*"],
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "casl-users-service",
+      "name": "CASL Users Service",
+      "description": "Service account for users-service (confidential)",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "casl-users-secret",
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin@casl.dev",
+      "firstName": "Admin",
+      "lastName": "CASL",
+      "credentials": [
+        { "type": "password", "value": "admin", "temporary": false }
+      ],
+      "realmRoles": ["USER", "ADMIN"]
+    },
+    {
+      "username": "user",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "user@casl.dev",
+      "firstName": "User",
+      "lastName": "CASL",
+      "credentials": [
+        { "type": "password", "value": "user", "temporary": false }
+      ],
+      "realmRoles": ["USER"]
+    }
+  ]
+}

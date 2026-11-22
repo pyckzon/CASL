@@ -30,6 +30,12 @@ spring:
               uri: ${PAYMENT_SERVICE_URI:http://localhost:8673}
               predicates:
                 - Path=/api/payments/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/casl}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8180/realms/casl/protocol/openid-connect/certs}
 
 server:
   port: 8080
@@ -38,7 +44,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,metrics
   endpoint:
     health:
       probes:
