@@ -1,34 +1,57 @@
 package com.casl.gateway.config;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Deny-by-default en el borde: salud pública, {@code /api/**} con JWT válido y
+ * cualquier otra ruta rechazada. Los 401 se devuelven como
+ * {@code application/problem+json} para respetar el contrato RFC 9457.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+	private final ObjectMapper objectMapper;
+
+	public SecurityConfig(ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
+	}
+
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
-				.csrf(csrf -> csrf.disable())
+				.csrf(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.requestMatchers("/api/**").authenticated()
 						.anyRequest().denyAll())
+				.exceptionHandling(ex -> ex.authenticationEntryPoint(this::unauthorized))
 				.oauth2ResourceServer(oauth2 -> oauth2
+						.authenticationEntryPoint(this::unauthorized)
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 		return http.build();
 	}
@@ -38,6 +61,19 @@ public class SecurityConfig {
 		JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 		converter.setJwtGrantedAuthoritiesConverter(new KeycloakRealmRoleConverter());
 		return converter;
+	}
+
+	private void unauthorized(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
+			throws IOException {
+		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+				"A valid access token is required");
+		problem.setType(URI.create("https://errors.casl.dev/unauthorized"));
+		problem.setTitle("Authentication required");
+		problem.setInstance(URI.create(request.getRequestURI()));
+		problem.setProperty("code", "UNAUTHORIZED");
+		response.setStatus(HttpStatus.UNAUTHORIZED.value());
+		response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+		objectMapper.writeValue(response.getOutputStream(), problem);
 	}
 
 	static class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {

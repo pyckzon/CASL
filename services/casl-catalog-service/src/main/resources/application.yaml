@@ -1,6 +1,12 @@
 spring:
   application:
     name: casl-catalog-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/casl}
+          jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:8180/realms/casl/protocol/openid-connect/certs}
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/casl_catalog}
     username: ${SPRING_DATASOURCE_USERNAME:casl}

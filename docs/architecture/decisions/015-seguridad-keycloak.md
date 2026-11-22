@@ -29,9 +29,41 @@ El sistema necesita autenticación y autorización para proteger los endpoints. 
 
 - **Spring Authorization Server:** más integrado pero más configuración; Keycloak es más completo y estándar.
 - **JWT auto-generado (sin IdP):** no demuestra integración con IdP real.
-- **Validación JWT en cada servicio:** redundante; el gateway es suficiente para este tamaño.
+- **Validación JWT solo en el gateway:** suficiente para el borde, pero no cubre defensa en profundidad.
+
+## Actualización — Fase 5.2 (autorización en servicios downstream)
+
+Se activa validación JWT también en los servicios con operaciones de gestión, sin
+depender únicamente del gateway:
+
+| Servicio | Sin token | Rol USER | Rol ADMIN |
+| --- | --- | --- | --- |
+| `casl-users-service` | 401 | `GET /users`, `GET /users/{id}` | `POST`, `PUT`, `DELETE` |
+| `casl-catalog-service` | 401 | lecturas (`products`, `categories`) | escrituras, ajuste/reserva/liberación de stock |
+| `casl-gateway` | 401 | enruta `/api/**` | enruta `/api/**` |
+| `casl-cart`, `casl-order`, `casl-payment` | 401 en el borde | — | — |
+
+Decisiones derivadas:
+
+1. **Deny-by-default también en cada servicio:** solo `/actuator/health` es público.
+   Las reglas finas viven en el controlador con `@PreAuthorize`, cerca del caso de uso.
+2. **Errores de seguridad con el contrato RFC 9457:** `401 UNAUTHORIZED` (entry point
+   problem+json) y `403 ACCESS_DENIED` (handler dedicado en `ApiExceptionHandler`, que
+   antes caía en el catch-all y devolvía 500).
+3. **`UserContextFilter` del gateway se ejecuta al final de la cadena de filtros**
+   (`Ordered.LOWEST_PRECEDENCE`): con orden previo al `FilterChainProxy` el
+   `SecurityContextHolder` todavía está vacío y `X-User-Id` nunca se propagaba.
+4. **Pruebas:** los tests de controlador puros excluyen la autoconfiguración de
+   seguridad (`@AutoConfigureMockMvc(addFilters = false)`); la autorización se cubre en
+   `UserSecurityTest`/`ProductSecurityTest`/`GatewaySecurityTest`. Los tests de
+   integración con Testcontainers se autentican con `@WithMockUser`.
+5. **Deuda asumida:** la lógica de resource server está duplicada en gateway, users y
+   catalog. Se extraerá a un módulo compartido cuando un cuarto servicio la necesite
+   (regla de tres), no antes.
 
 ## Decisiones abiertas
 
-- Validación JWT en cada servicio (zero-trust) se evalúa en Fase 7 (integraciones enterprise).
+- Validación JWT en `cart`, `order` y `payment` (zero-trust completo) se planifica para
+  Fase 5.3, reutilizando el módulo compartido de seguridad.
 - Keycloak en modo producción (HTTPS, base de datos externa) se configura en Fase 10 (K8s).
+

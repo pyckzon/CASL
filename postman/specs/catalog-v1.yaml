@@ -3,12 +3,19 @@ info:
   title: CASL Catalog API
   version: 1.0.0
   summary: Catálogo de productos, categorías y stock
-  description: Contrato del servicio de catálogo (Fase 2). Búsqueda por criterios combinables (Strategy), stock con reserva/liberación.
+  description: |-
+    Contrato del servicio de catálogo (Fase 2). Búsqueda por criterios combinables (Strategy), stock con reserva/liberación.
+
+    Autenticación (Fase 5): todas las operaciones requieren `Authorization: Bearer <JWT>` de Keycloak.
+    `USER` puede leer; crear/actualizar/borrar productos, categorías y ajustar stock requieren `ADMIN`.
+    Sin token válido: `401` `UNAUTHORIZED`; rol insuficiente: `403` `ACCESS_DENIED`.
 servers:
   - url: http://localhost:8670
     description: Servicio directo
   - url: http://localhost:8080
     description: A través del gateway
+security:
+  - bearerAuth: []
 tags:
   - name: Products
   - name: Categories
@@ -182,6 +189,12 @@ paths:
       responses:
         '204': { description: Eliminada }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token JWT emitido por Keycloak (realm `casl`)
   parameters:
     Id:
       name: id

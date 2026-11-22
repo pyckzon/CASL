@@ -10,6 +10,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -106,6 +108,19 @@ public class ApiExceptionHandler {
 			HttpServletRequest request) {
 		return problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "Unsupported media type",
 				"The request content type is not supported; use application/json", request);
+	}
+
+	@ExceptionHandler(AccessDeniedException.class)
+	ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException exception, HttpServletRequest request) {
+		return problem(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "Access denied",
+				"The authenticated principal lacks the required role", request);
+	}
+
+	@ExceptionHandler(AuthenticationException.class)
+	ResponseEntity<ProblemDetail> handleUnauthenticated(AuthenticationException exception,
+			HttpServletRequest request) {
+		return problem(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required",
+				"A valid access token is required", request);
 	}
 
 	@ExceptionHandler(Exception.class)

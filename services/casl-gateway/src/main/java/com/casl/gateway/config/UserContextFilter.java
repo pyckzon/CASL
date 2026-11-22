@@ -21,9 +21,14 @@ import java.util.List;
 /**
  * Propaga el `sub` del JWT como header `X-User-Id` hacia los servicios
  * downstream (anti-corruption de identidad).
+ *
+ * <p>Debe ejecutarse <em>después</em> de la cadena de Spring Security para que
+ * el {@link SecurityContextHolder} ya contenga la autenticación; con
+ * {@link Ordered#LOWEST_PRECEDENCE} queda al final de la cadena, después del
+ * {@code FilterChainProxy}.
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 10)
+@Order(Ordered.LOWEST_PRECEDENCE)
 public class UserContextFilter extends OncePerRequestFilter {
 
 	public static final String USER_ID_HEADER = "X-User-Id";

@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +42,7 @@ public class ProductController {
 	}
 
 	@PostMapping
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<ProductResponse> create(@Valid @RequestBody CreateProductRequest request) {
 		Product created = useCase.create(ProductWebMapper.toCreateCommand(request));
 		return ResponseEntity.created(URI.create(BASE + created.id()))
@@ -48,16 +50,19 @@ public class ProductController {
 	}
 
 	@GetMapping("/{id}")
+	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	public ProductResponse get(@PathVariable UUID id) {
 		return ProductWebMapper.toResponse(useCase.getById(id));
 	}
 
 	@GetMapping("/sku/{sku}")
+	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	public ProductResponse getBySku(@PathVariable String sku) {
 		return ProductWebMapper.toResponse(useCase.getBySku(sku));
 	}
 
 	@GetMapping
+	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	public ProductPageResponse search(
 			@RequestParam(required = false) @Size(max = 200) String name,
 			@RequestParam(required = false) UUID categoryId,
@@ -71,27 +76,32 @@ public class ProductController {
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ProductResponse update(@PathVariable UUID id, @Valid @RequestBody UpdateProductRequest request) {
 		return ProductWebMapper.toResponse(useCase.update(id, ProductWebMapper.toUpdateCommand(request)));
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Void> delete(@PathVariable UUID id) {
 		useCase.delete(id);
 		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/{id}/stock/adjust")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ProductResponse adjustStock(@PathVariable UUID id, @Valid @RequestBody StockQuantityRequest request) {
 		return ProductWebMapper.toResponse(useCase.adjustStock(new AdjustStockCommand(id, request.quantity())));
 	}
 
 	@PostMapping("/{id}/stock/reserve")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ProductResponse reserve(@PathVariable UUID id, @Valid @RequestBody StockQuantityRequest request) {
 		return ProductWebMapper.toResponse(useCase.reserve(new ReserveStockCommand(id, request.quantity())));
 	}
 
 	@PostMapping("/{id}/stock/release")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ProductResponse release(@PathVariable UUID id, @Valid @RequestBody StockQuantityRequest request) {
 		return ProductWebMapper.toResponse(useCase.release(new ReleaseStockCommand(id, request.quantity())));
 	}

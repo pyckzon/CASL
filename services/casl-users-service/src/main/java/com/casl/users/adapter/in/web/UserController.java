@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +42,7 @@ public class UserController {
 	}
 
 	@GetMapping
+	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	public UserPageResponse list(
 			@RequestParam(defaultValue = "0") @Min(0) int page,
 			@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
@@ -51,11 +53,13 @@ public class UserController {
 	}
 
 	@GetMapping("/{id}")
+	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	public UserResponse get(@PathVariable UUID id) {
 		return UserWebMapper.toResponse(useCase.getById(id));
 	}
 
 	@PostMapping
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<UserResponse> create(@Valid @RequestBody CreateUserRequest request) {
 		User created = useCase.create(UserWebMapper.toCommand(request));
 		return ResponseEntity.created(URI.create(RESOURCE_PATH + created.id()))
@@ -63,11 +67,13 @@ public class UserController {
 	}
 
 	@PutMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
 	public UserResponse update(@PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
 		return UserWebMapper.toResponse(useCase.update(id, UserWebMapper.toCommand(request)));
 	}
 
 	@DeleteMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
 	public ResponseEntity<Void> delete(@PathVariable UUID id) {
 		useCase.delete(id);
 		return ResponseEntity.noContent().build();
