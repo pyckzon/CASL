@@ -9,6 +9,7 @@ import com.casl.order.domain.model.Order;
 import com.casl.order.domain.model.PaymentRequest;
 import com.casl.order.domain.model.PaymentResult;
 import com.casl.order.domain.port.OrderRepository;
+import com.casl.order.domain.port.OutboxRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +25,16 @@ public class OrderApplicationService implements OrderUseCase {
 
 	private final OrderRepository repository;
 	private final PaymentCaller paymentCaller;
+	private final OutboxRepository outboxRepository;
+	private final tools.jackson.databind.ObjectMapper objectMapper;
 	private final Clock clock;
 
-	public OrderApplicationService(OrderRepository repository, PaymentCaller paymentCaller, Clock clock) {
+	public OrderApplicationService(OrderRepository repository, PaymentCaller paymentCaller, OutboxRepository outboxRepository,
+			tools.jackson.databind.ObjectMapper objectMapper, Clock clock) {
 		this.repository = repository;
 		this.paymentCaller = paymentCaller;
+		this.outboxRepository = outboxRepository;
+		this.objectMapper = objectMapper;
 		this.clock = clock;
 	}
 
@@ -38,6 +44,16 @@ public class OrderApplicationService implements OrderUseCase {
 		Instant now = clock.instant();
 		Order order = Order.create(command.userId(), command.lines(), now);
 		Order saved = repository.save(order);
+		// Transactional outbox: persist event in same transaction
+		try {
+			com.casl.order.domain.event.EventEnvelope envelope = new com.casl.order.domain.event.EventEnvelope(
+					java.util.UUID.randomUUID(), "order.created.v1", saved.orderId().toString(),
+					saved.createdAt(), 1, null, saved);
+			outboxRepository.save(java.util.UUID.randomUUID(), saved.orderId().toString(), "order.created.v1",
+					objectMapper.writeValueAsString(envelope), saved.createdAt());
+		} catch (Exception exception) {
+			log.error("Failed to write outbox event for order {}", saved.orderId(), exception);
+		}
 		log.info("Order created id={} total={}", saved.orderId(), saved.totalAmount());
 		return saved;
 	}
