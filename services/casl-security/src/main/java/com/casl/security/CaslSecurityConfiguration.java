@@ -48,12 +48,12 @@ public class CaslSecurityConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean(SecurityFilterChain.class)
-	@SuppressWarnings("codeql[java/spring-disabled-csrf-protection]: API stateless: el JWT viaja en Authorization: Bearer, no en cookies; el navegador no lo adjunta automáticamente y CSRF no es aplicable")
 	public SecurityFilterChain caslSecurityFilterChain(HttpSecurity http,
 			AuthenticationEntryPoint authenticationEntryPoint,
 			AccessDeniedHandler accessDeniedHandler,
 			JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
 		http
+				// codeql[java/spring-disabled-csrf-protection] API stateless: el JWT viaja en Authorization: Bearer, no en cookies; el navegador no lo adjunta automáticamente y CSRF no es aplicable
 				.csrf(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
