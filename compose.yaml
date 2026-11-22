@@ -6,25 +6,21 @@ services:
   # ========================================================================
 
   postgres-users:
-    profiles:
-      - core
+    profiles: [core]
     image: postgres:17-alpine
     environment:
       POSTGRES_DB: casl_users
       POSTGRES_USER: casl
       POSTGRES_PASSWORD: casl_dev
-    ports:
-      - "5433:5432"
-    volumes:
-      - pg_users_data:/var/lib/postgresql/data
+    ports: ["5433:5432"]
+    volumes: [pg_users_data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U casl -d casl_users"]
       interval: 5s
       retries: 10
 
   casl-users-service:
-    profiles:
-      - core
+    profiles: [core]
     image: casl/casl-users-service:0.0.1-SNAPSHOT
     depends_on:
       postgres-users:
@@ -34,65 +30,33 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-users:5432/casl_users
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
-    ports:
-      - "8666:8666"
-    # Sin healthcheck de contenedor: la imagen buildpacks no incluye shell
-    # ni curl/wget (exec: "sh": executable file not found). El health de la
-    # app se expone en /actuator/health. El healthcheck de contenedor se
-    # implementará en Kubernetes (Fase 7).
-
-  # ========================================================================
-  # Perfil: observability (reservado: Prometheus, Grafana, Loki, Tempo)
-  # Perfil: cloud (reservado: Kafka, Keycloak, Config, Discovery)
-  # ========================================================================
-
-  casl-gateway:
-    profiles:
-      - core
-    image: casl/casl-gateway:0.0.1-SNAPSHOT
-    depends_on:
-      - casl-users-service
-    environment:
-      SERVER_PORT: 8080
-      USERS_SERVICE_URI: http://casl-users-service:8666
-      CATALOG_SERVICE_URI: http://casl-catalog-service:8670
-      CART_SERVICE_URI: http://casl-cart-service:8671
-      ORDER_SERVICE_URI: http://casl-order-service:8672
-      PAYMENT_SERVICE_URI: http://casl-payment-service:8673
-    ports:
-      - "8080:8080"
+    ports: ["8666:8666"]
 
   redis:
-    profiles:
-      - core
+    profiles: [core]
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    ports: ["6379:6379"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       retries: 10
 
   postgres-catalog:
-    profiles:
-      - core
+    profiles: [core]
     image: postgres:17-alpine
     environment:
       POSTGRES_DB: casl_catalog
       POSTGRES_USER: casl
       POSTGRES_PASSWORD: casl_dev
-    ports:
-      - "5434:5432"
-    volumes:
-      - pg_catalog_data:/var/lib/postgresql/data
+    ports: ["5434:5432"]
+    volumes: [pg_catalog_data:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U casl -d casl_catalog"]
       interval: 5s
       retries: 10
 
   casl-catalog-service:
-    profiles:
-      - core
+    profiles: [core]
     image: casl/casl-catalog-service:0.0.1-SNAPSHOT
     depends_on:
       postgres-catalog:
@@ -106,12 +70,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: casl_dev
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
-    ports:
-      - "8670:8670"
+    ports: ["8670:8670"]
 
   casl-cart-service:
-    profiles:
-      - core
+    profiles: [core]
     image: casl/casl-cart-service:0.0.1-SNAPSHOT
     depends_on:
       redis:
@@ -122,12 +84,24 @@ services:
       SPRING_REDIS_PORT: 6379
       CASL_CART_TTL_MINUTES: 1440
       CATALOG_BASE_URL: http://casl-catalog-service:8670
-    ports:
-      - "8671:8671"
+    ports: ["8671:8671"]
+
+  postgres-orders:
+    profiles: [core]
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: casl_orders
+      POSTGRES_USER: casl
+      POSTGRES_PASSWORD: casl_dev
+    ports: ["5435:5432"]
+    volumes: [pg_orders_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_orders"]
+      interval: 5s
+      retries: 10
 
   casl-order-service:
-    profiles:
-      - core
+    profiles: [core]
     image: casl/casl-order-service:0.0.1-SNAPSHOT
     depends_on:
       postgres-orders:
@@ -137,29 +111,26 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-orders:5432/casl_orders
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
-    ports:
-      - "8672:8672"
+      PAYMENT_BASE_URL: http://casl-payment-service:8673
+      CASL_PAYMENT_SIMULATED: "false"
+    ports: ["8672:8672"]
 
-  postgres-orders:
-    profiles:
-      - core
+  postgres-payments:
+    profiles: [core]
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: casl_orders
+      POSTGRES_DB: casl_payments
       POSTGRES_USER: casl
       POSTGRES_PASSWORD: casl_dev
-    ports:
-      - "5435:5432"
-    volumes:
-      - pg_orders_data:/var/lib/postgresql/data
+    ports: ["5436:5432"]
+    volumes: [pg_payments_data:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U casl -d casl_orders"]
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_payments"]
       interval: 5s
       retries: 10
 
   casl-payment-service:
-    profiles:
-      - core
+    profiles: [core]
     image: casl/casl-payment-service:0.0.1-SNAPSHOT
     depends_on:
       postgres-payments:
@@ -169,61 +140,88 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payments:5432/casl_payments
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
-    ports:
-      - "8673:8673"
+    ports: ["8673:8673"]
 
-  postgres-payments:
-    profiles:
-      - core
+  kafka:
+    profiles: [core]
+    image: apache/kafka:3.8.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports: ["9092:9092"]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+
+  postgres-notifications:
+    profiles: [core]
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: casl_payments
+      POSTGRES_DB: casl_notifications
       POSTGRES_USER: casl
       POSTGRES_PASSWORD: casl_dev
-    ports:
-      - "5436:5432"
-    volumes:
-      - pg_payments_data:/var/lib/postgresql/data
+    ports: ["5437:5432"]
+    volumes: [pg_notifications_data:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U casl -d casl_payments"]
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_notifications"]
       interval: 5s
       retries: 10
 
-  casl-payment-service:
-    profiles:
-      - core
-    image: casl/casl-payment-service:0.0.1-SNAPSHOT
+  casl-notification-service:
+    profiles: [core]
+    image: casl/casl-notification-service:0.0.1-SNAPSHOT
     depends_on:
-      postgres-payments:
+      postgres-notifications:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     environment:
-      SERVER_PORT: 8673
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payments:5432/casl_payments
+      SERVER_PORT: 8674
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notifications:5432/casl_notifications
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
-    ports:
-      - "8673:8673"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports: ["8674:8674"]
 
-  postgres-payments:
-    profiles:
-      - core
-    image: postgres:17-alpine
+  casl-gateway:
+    profiles: [core]
+    image: casl/casl-gateway:0.0.1-SNAPSHOT
+    depends_on:
+      - casl-users-service
+      - casl-catalog-service
+      - casl-cart-service
+      - casl-order-service
+      - casl-payment-service
     environment:
-      POSTGRES_DB: casl_payments
-      POSTGRES_USER: casl
-      POSTGRES_PASSWORD: casl_dev
-    ports:
-      - "5436:5432"
-    volumes:
-      - pg_payments_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U casl -d casl_payments"]
-      interval: 5s
-      retries: 10
+      SERVER_PORT: 8080
+      USERS_SERVICE_URI: http://casl-users-service:8666
+      CATALOG_SERVICE_URI: http://casl-catalog-service:8670
+      CART_SERVICE_URI: http://casl-cart-service:8671
+      ORDER_SERVICE_URI: http://casl-order-service:8672
+      PAYMENT_SERVICE_URI: http://casl-payment-service:8673
+    ports: ["8080:8080"]
 
 volumes:
   pg_users_data:
   pg_catalog_data:
   pg_orders_data:
   pg_payments_data:
-  pg_payments_data:
+  pg_notifications_data:
+
+  # ========================================================================
+  # Perfil: observability (reservado: Prometheus, Grafana, Loki, Tempo)
+  # Perfil: cloud (reservado: Keycloak, Config, Discovery)
+  # ========================================================================
