@@ -16,6 +16,8 @@ dependencyManagement {
 dependencies {
 	implementation(libs.spring.boot.starter.log4j2)
 	implementation(libs.spring.boot.starter.actuator)
+	implementation(libs.spring.boot.starter.oauth2.resource.server)
+	implementation(libs.spring.boot.starter.security)
 	implementation("org.springframework.cloud:spring-cloud-starter-gateway-server-webmvc")
 
 	developmentOnly(libs.spring.boot.devtools)
