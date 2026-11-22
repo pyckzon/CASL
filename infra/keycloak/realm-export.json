@@ -51,6 +51,18 @@
       "serviceAccountsEnabled": true,
       "secret": "casl-users-secret",
       "protocol": "openid-connect"
+    },
+    {
+      "clientId": "casl-order-service",
+      "name": "CASL Order Service",
+      "description": "Service account for order-to-payment calls (confidential)",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "casl-order-secret",
+      "protocol": "openid-connect"
     }
   ],
   "users": [

@@ -2,12 +2,14 @@ openapi: 3.1.0
 info:
   title: CASL Orders API
   version: 1.0.0
-  summary: Ordenes y pagos (saga sincrona)
+  summary: Ordenes y pagos (saga sincrona); el dueño se deriva del JWT validado
 servers:
   - url: http://localhost:8672
     description: Servicio directo
   - url: http://localhost:8080
     description: A traves del gateway
+security:
+  - bearerAuth: []
 tags:
   - name: Orders
 paths:
@@ -15,6 +17,7 @@ paths:
     post:
       operationId: createOrder
       tags: [Orders]
+      description: Crea el pedido para el sujeto autenticado. `userId` en el body se ignora.
       requestBody:
         required: true
         content:
@@ -29,6 +32,8 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/OrderResponse' }
         '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     get: { operationId: notImplemented, responses: { '501': { description: Not implemented } } }
   /api/orders/v1/orders/{orderId}:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
@@ -40,6 +45,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/orders/v1/orders/{orderId}/pay:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
@@ -51,6 +58,9 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/orders/v1/orders/{orderId}/cancel:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     post:
@@ -68,7 +78,16 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OrderResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token JWT emitido por Keycloak (realm `casl`)
   parameters:
     Id:
       name: orderId
@@ -93,7 +112,6 @@ components:
       type: object
       required: [items]
       properties:
-        userId: { type: string, format: uuid, nullable: true }
         items:
           type: array
           minItems: 1
@@ -114,7 +132,7 @@ components:
       required: [orderId, status, totalAmount, currency, lines, createdAt, updatedAt]
       properties:
         orderId: { type: string, format: uuid }
-        userId: { type: string, format: uuid, nullable: true }
+        userId: { type: string, format: uuid, nullable: true, description: Subject del JWT que creó el pedido }
         status: { $ref: '#/components/schemas/OrderStatus' }
         totalAmount: { type: number }
         currency: { type: string }
@@ -130,6 +148,16 @@ components:
   responses:
     BadRequest:
       description: Petición inválida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Token ausente o inválido
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Sin rol USER/ADMIN o pedido ajeno
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

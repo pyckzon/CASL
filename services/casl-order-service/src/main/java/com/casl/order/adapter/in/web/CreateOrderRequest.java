@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
-import java.util.UUID;
 
+/**
+ * El dueño del pedido NO viaja en el contrato: se deriva del JWT validado para
+ * evitar que un cliente cree pedidos a nombre de otro usuario.
+ */
 public record CreateOrderRequest(
-		UUID userId,
 		@NotEmpty List<@Valid OrderLineRequest> items) {
 }

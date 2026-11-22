@@ -30,6 +30,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-users:5432/casl_users
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
+      KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/casl
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/certs
     ports: ["8666:8666"]
 
   redis:
@@ -70,6 +72,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: casl_dev
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/casl
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/certs
     ports: ["8670:8670"]
 
   casl-cart-service:
@@ -84,6 +88,8 @@ services:
       SPRING_REDIS_PORT: 6379
       CASL_CART_TTL_MINUTES: 1440
       CATALOG_BASE_URL: http://casl-catalog-service:8670
+      KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/casl
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/certs
     ports: ["8671:8671"]
 
   postgres-orders:
@@ -113,6 +119,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: casl_dev
       PAYMENT_BASE_URL: http://casl-payment-service:8673
       CASL_PAYMENT_SIMULATED: "false"
+      KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/casl
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/certs
+      KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/token
+      KEYCLOAK_CLIENT_ID: casl-order-service
+      KEYCLOAK_CLIENT_SECRET: casl-order-secret
     ports: ["8672:8672"]
 
   postgres-payments:
@@ -140,6 +151,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payments:5432/casl_payments
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
+      KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/casl
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/certs
     ports: ["8673:8673"]
 
   kafka:
@@ -213,6 +226,8 @@ services:
       ORDER_SERVICE_URI: http://casl-order-service:8672
       PAYMENT_SERVICE_URI: http://casl-payment-service:8673
       SHIPPING_SERVICE_URI: http://casl-shipping-service:8675
+      KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/casl
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/certs
     ports: ["8080:8080"]
 
   casl-shipping-service:

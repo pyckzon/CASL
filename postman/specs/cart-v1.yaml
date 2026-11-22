@@ -2,12 +2,14 @@ openapi: 3.1.0
 info:
   title: CASL Cart API
   version: 1.0.0
-  summary: Carrito de compras (almacenado en Redis)
+  summary: Carrito de compras (Redis); el propietario se deriva del JWT validado
 servers:
   - url: http://localhost:8671
     description: Servicio directo
   - url: http://localhost:8080
     description: A través del gateway
+security:
+  - bearerAuth: []
 tags:
   - name: Carts
 paths:
@@ -15,10 +17,7 @@ paths:
     post:
       operationId: createCart
       tags: [Carts]
-      parameters:
-        - name: userId
-          in: query
-          schema: { type: string, format: uuid }
+      description: Crea el carrito del sujeto autenticado. No se acepta `userId` del cliente.
       responses:
         '201':
           description: Carrito creado
@@ -27,6 +26,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/cart/v1/carts/{cartId}:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     get:
@@ -37,6 +38,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
     delete:
       operationId: clearCart
@@ -46,6 +49,9 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/cart/v1/carts/{cartId}/items:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     post:
@@ -61,6 +67,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
   /api/cart/v1/carts/{cartId}/items/{productId}:
@@ -78,6 +86,9 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
     delete:
       operationId: removeItem
       tags: [Carts]
@@ -86,11 +97,15 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/cart/v1/carts/{cartId}/merge:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     post:
       operationId: mergeCarts
       tags: [Carts]
+      description: Ambos carritos deben pertenecer al sujeto autenticado.
       requestBody:
         required: true
         content:
@@ -101,7 +116,16 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token JWT emitido por Keycloak (realm `casl`)
   parameters:
     Id:
       name: cartId
@@ -141,7 +165,7 @@ components:
       required: [cartId, items, totalItems, totalAmount, createdAt, updatedAt]
       properties:
         cartId: { type: string, format: uuid }
-        userId: { type: string, format: uuid, nullable: true }
+        userId: { type: string, format: uuid, nullable: true, description: Subject del JWT que creó el carrito }
         items:
           type: array
           items: { $ref: '#/components/schemas/CartItemResponse' }
@@ -152,6 +176,16 @@ components:
     Problem:
       $ref: '../users-v1.yaml#/components/schemas/Problem'
   responses:
+    Unauthorized:
+      description: Token ausente o inválido
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Sin rol USER/ADMIN o carrito ajeno
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
     NotFound:
       description: Carrito no encontrado
       content:

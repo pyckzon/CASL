@@ -2,12 +2,14 @@ openapi: 3.1.0
 info:
   title: CASL Payments API
   version: 1.0.0
-  summary: Pagos idempotentes
+  summary: Pagos idempotentes; cobros y devoluciones solo para ADMIN o cuenta de servicio
 servers:
   - url: http://localhost:8673
     description: Servicio directo
   - url: http://localhost:8080
     description: A traves del gateway
+security:
+  - bearerAuth: []
 tags:
   - name: Payments
 paths:
@@ -15,6 +17,7 @@ paths:
     post:
       operationId: charge
       tags: [Payments]
+      description: Requiere rol ADMIN o token de cuenta de servicio (`casl-order-service`).
       parameters:
         - name: Idempotency-Key
           in: header
@@ -34,30 +37,44 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentResponse' }
         '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/payments/v1/payments/{paymentId}:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     get:
       operationId: getPayment
       tags: [Payments]
+      description: Requiere rol ADMIN o token de cuenta de servicio (`casl-order-service`).
       responses:
         '200':
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
   /api/payments/v1/payments/{paymentId}/refund:
     parameters: [ { $ref: '#/components/parameters/Id' } ]
     post:
       operationId: refundPayment
       tags: [Payments]
+      description: Requiere rol ADMIN o token de cuenta de servicio (`casl-order-service`).
       responses:
         '200':
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token JWT emitido por Keycloak (realm `casl`)
   parameters:
     Id:
       name: paymentId
@@ -92,6 +109,16 @@ components:
   responses:
     BadRequest:
       description: Petición inválida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Token ausente o inválido
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Se requiere ADMIN o cuenta de servicio
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

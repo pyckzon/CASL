@@ -1,5 +1,6 @@
 package com.casl.order.config;
 
+import com.casl.order.adapter.out.payment.KeycloakServiceTokenProvider;
 import com.casl.order.adapter.out.payment.RestPaymentGateway;
 import com.casl.order.domain.port.PaymentGateway;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,10 +21,11 @@ public class ApplicationConfiguration {
 	@Bean
 	PaymentGateway paymentGateway(RestClient.Builder builder,
 			@Value("${casl.payment.base-url:http://localhost:8673}") String baseUrl,
-			@Value("${casl.payment.simulated:false}") boolean simulated) {
+			@Value("${casl.payment.simulated:false}") boolean simulated,
+			KeycloakServiceTokenProvider tokenProvider) {
 		if (simulated) {
 			return new SimulatedPaymentGateway();
 		}
-		return new RestPaymentGateway(builder, baseUrl);
+		return new RestPaymentGateway(builder, baseUrl, tokenProvider);
 	}
 }

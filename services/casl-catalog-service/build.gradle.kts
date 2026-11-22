@@ -20,6 +20,7 @@ dependencies {
 	implementation(libs.spring.boot.starter.data.jpa)
 	implementation(libs.spring.boot.starter.validation)
 	implementation(libs.spring.boot.starter.oauth2.resource.server)
+	implementation(project(":services:casl-security"))
 	implementation(libs.spring.boot.starter.cache)
 	implementation(libs.spring.boot.starter.data.redis)
 	implementation(libs.spring.boot.flyway)

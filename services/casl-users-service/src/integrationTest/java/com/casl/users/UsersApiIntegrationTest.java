@@ -126,10 +126,10 @@ class UsersApiIntegrationTest {
 	}
 
 	@Test
-	void legacyRouteIsGoneAndUnknownPathsReturn404ProblemJson() throws Exception {
+	void legacyRouteIsGoneAndUnknownPathsAreDenied() throws Exception {
 		mockMvc.perform(get("/rest-api/v1/crud/user/ana").param("id", "123"))
-				.andExpect(status().isNotFound())
-				.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
 	}
 
 	@Test
