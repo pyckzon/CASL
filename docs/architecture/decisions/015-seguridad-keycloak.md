@@ -61,9 +61,39 @@ Decisiones derivadas:
    catalog. Se extraerá a un módulo compartido cuando un cuarto servicio la necesite
    (regla de tres), no antes.
 
+## Actualización — Fase 5.3 (anti-corruption de identidad)
+
+1. **La identidad se deriva del token, no de un header.** Los servicios que validan
+   el JWT obtienen el sujeto directamente del `SecurityContext` (`@AuthenticationPrincipal
+   Jwt`); confiar en `X-User-Id` sería una superficie de spoofing evitable. El header
+   sigue existiendo en el gateway para `cart`, `order` y `payment` mientras no validen
+   el token por sí mismos, y desaparecerá al completar el zero-trust.
+2. **Modelo separado del agregado.** El vínculo vive en `user_identities`
+   (`provider`, `subject`) con restricción única y `ON DELETE CASCADE`, en lugar de
+   añadir una columna nullable a `users`. La autenticación es otro contexto: el
+   agregado `User` no conoce a su proveedor de identidad y se podrá soportar un
+   segundo IdP sin migrar el agregado.
+3. **Reglas de aprovisionamiento just-in-time** en `GET /api/users/v1/users/me`:
+   - Vínculo existente → devuelve el usuario vinculado (idempotente).
+   - Sin vínculo y `email_verified=true` → enlaza con el usuario existente de ese email.
+   - Sin vínculo y email libre → crea el usuario y lo enlaza.
+   - Sin vínculo y email ya registrado sin verificar → `409 USER_EMAIL_ALREADY_EXISTS`
+     (un token no verificado no puede apropiarse de un perfil ajeno).
+   - Sin email en el token → `400 VALIDATION_ERROR`.
+   - Usuario vinculado `INACTIVE` → `403 USER_INACTIVE`.
+   - Carrera de aprovisionamiento → la restricción única deja ganar a una petición y la
+     otra recibe `409 IDENTITY_ALREADY_LINKED`; reintentar devuelve el vínculo ganador
+     (se evita recuperar dentro de la misma transacción, que quedaría marcada para rollback).
+4. **Matriz de autorización endurecida:** `GET /users` y `GET /users/{id}` pasan a ser
+   solo `ADMIN` (antes cualquier `USER` podía enumerar y leer cualquier perfil). `USER`
+   consulta únicamente `GET /users/me`.
+
 ## Decisiones abiertas
 
 - Validación JWT en `cart`, `order` y `payment` (zero-trust completo) se planifica para
-  Fase 5.3, reutilizando el módulo compartido de seguridad.
+  Fase 5.4, reutilizando el módulo compartido de seguridad.
+- Invalidación de sesiones cuando un usuario pasa a `INACTIVE`: hoy el token sigue
+  siendo criptográficamente válido hasta expirar; la comprobación de estado se hace en
+  cada llamada a `/me`, y para el resto de endpoints se evaluará en Fase 7.
 - Keycloak en modo producción (HTTPS, base de datos externa) se configura en Fase 10 (K8s).
 

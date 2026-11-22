@@ -12,6 +12,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,7 +44,7 @@ public class UserController {
 	}
 
 	@GetMapping
-	@PreAuthorize("hasAnyRole('USER','ADMIN')")
+	@PreAuthorize("hasRole('ADMIN')")
 	public UserPageResponse list(
 			@RequestParam(defaultValue = "0") @Min(0) int page,
 			@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
@@ -52,8 +54,14 @@ public class UserController {
 		return UserWebMapper.toResponse(result);
 	}
 
-	@GetMapping("/{id}")
+	@GetMapping("/me")
 	@PreAuthorize("hasAnyRole('USER','ADMIN')")
+	public UserResponse me(@AuthenticationPrincipal Jwt jwt) {
+		return UserWebMapper.toResponse(useCase.currentUser(UserWebMapper.toProfile(jwt)));
+	}
+
+	@GetMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
 	public UserResponse get(@PathVariable UUID id) {
 		return UserWebMapper.toResponse(useCase.getById(id));
 	}

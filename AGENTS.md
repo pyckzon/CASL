@@ -18,7 +18,7 @@ Before responding to any non-trivial API engineering task — designing, impleme
 - Dev: `spring-boot-devtools` included as `developmentOnly`
 
 ## API
-- Users: base path `/api/users/v1/users` (gateway `http://localhost:8080/api/users/**`)
+- Users: base path `/api/users/v1/users` (gateway `http://localhost:8080/api/users/**`); `GET /me` resuelve el usuario desde el `sub` del token (aprovisionamiento JIT), listar/leer otros exige `ADMIN`
 - Catalog: base path `/api/catalog/v1/products`, `/api/catalog/v1/categories` (gateway `http://localhost:8080/api/catalog/**`)
 - Errores en `application/problem+json` (RFC 9457) con `code` estable
 - Seguridad (Fase 5): Keycloak 26.8 (realm `casl`, puerto 8180) emite JWT; gateway, users y catalog validan el token (resource server, deny-by-default). Roles `USER` (lectura) y `ADMIN` (escritura). 401 `UNAUTHORIZED` / 403 `ACCESS_DENIED` en problem+json. Gateway propaga `X-User-Id` con el `sub` del JWT

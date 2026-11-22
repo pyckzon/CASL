@@ -7,7 +7,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,6 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -126,6 +130,52 @@ class UsersApiIntegrationTest {
 		mockMvc.perform(get("/rest-api/v1/crud/user/ana").param("id", "123"))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.code").value("NOT_FOUND"));
+	}
+
+	@Test
+	void firstAccessProvisionsExactlyOneUserFromToken() throws Exception {
+		String firstId = mockMvc.perform(get(BASE + "/me").with(token("sub-jit", "nueva@example.com")))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.email").value("nueva@example.com"))
+				.andExpect(jsonPath("$.status").value("ACTIVE"))
+				.andReturn().getResponse().getContentAsString();
+
+		mockMvc.perform(get(BASE + "/me").with(token("sub-jit", "nueva@example.com")))
+				.andExpect(status().isOk())
+				.andExpect(content().json(firstId));
+
+		mockMvc.perform(get(BASE))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.totalElements").value(1));
+	}
+
+	@Test
+	void inactiveUserCannotReadOwnProfile() throws Exception {
+		String location = mockMvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON).content("""
+						{"email":"inactivo@example.com","firstName":"Inés","lastName":"Pérez"}
+						"""))
+				.andExpect(status().isCreated())
+				.andReturn().getResponse().getHeader("Location");
+
+		mockMvc.perform(put(location).contentType(MediaType.APPLICATION_JSON).content("""
+						{"email":"inactivo@example.com","firstName":"Inés","lastName":"Pérez","status":"INACTIVE"}
+						"""))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(get(BASE + "/me").with(token("sub-inactive", "inactivo@example.com")))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("USER_INACTIVE"));
+	}
+
+	private static SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor token(String subject, String email) {
+		return jwt()
+				.jwt(builder -> builder
+						.subject(subject)
+						.claim("email", email)
+						.claim("email_verified", true)
+						.claim("given_name", "Nombre")
+						.claim("family_name", "Apellido"))
+				.authorities(new SimpleGrantedAuthority("ROLE_USER"));
 	}
 
 	private void create(String email, String firstName) throws Exception {

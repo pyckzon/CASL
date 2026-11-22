@@ -1,18 +1,22 @@
 package com.casl.users.adapter.in.web;
 
+import com.casl.users.application.command.IdentityProfile;
 import com.casl.users.application.port.in.UserUseCase;
 import com.casl.users.config.SecurityConfig;
 import com.casl.users.domain.model.Email;
 import com.casl.users.domain.model.PageResult;
 import com.casl.users.domain.model.PhoneNumber;
 import com.casl.users.domain.model.User;
+import com.casl.users.domain.model.UserIdentity;
 import com.casl.users.domain.model.UserStatus;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -22,9 +26,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -33,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Verifica las reglas de autorización del servicio: deny-by-default (401),
- * rol insuficiente (403) y acceso con el rol correcto.
+ * rol insuficiente (403), lectura del propio perfil y acceso admin.
  */
 @WebMvcTest(value = UserController.class, excludeAutoConfiguration = {
 		org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration.class,
@@ -72,11 +79,59 @@ class UserSecurityTest {
 
 	@Test
 	@WithMockUser(roles = "USER")
-	void userCanReadResources() throws Exception {
+	void userCannotListAllUsers() throws Exception {
+		mockMvc.perform(get(BASE))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+
+		verifyNoInteractions(useCase);
+	}
+
+	@Test
+	@WithMockUser(roles = "USER")
+	void userCannotReadAnotherUserById() throws Exception {
+		mockMvc.perform(get(BASE + "/{id}", ID))
+				.andExpect(status().isForbidden());
+
+		verifyNoInteractions(useCase);
+	}
+
+	@Test
+	@WithMockUser(roles = "ADMIN")
+	void adminCanListUsers() throws Exception {
 		when(useCase.list(any())).thenReturn(new PageResult<>(List.of(user()), 0, 20, 1));
 
 		mockMvc.perform(get(BASE))
 				.andExpect(status().isOk());
+	}
+
+	@Test
+	void userCanReadOwnProfileBuiltFromTokenClaims() throws Exception {
+		when(useCase.currentUser(any())).thenReturn(user());
+
+		mockMvc.perform(get(BASE + "/me").with(jwt()
+						.jwt(token -> token
+								.subject("sub-1")
+								.claim("email", "ana@example.com")
+								.claim("email_verified", true)
+								.claim("given_name", "Ana")
+								.claim("family_name", "Pérez"))
+						.authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.email").value("ana@example.com"));
+
+		ArgumentCaptor<IdentityProfile> captor = ArgumentCaptor.forClass(IdentityProfile.class);
+		verify(useCase).currentUser(captor.capture());
+		assertThat(captor.getValue()).isEqualTo(new IdentityProfile(
+				UserIdentity.KEYCLOAK, "sub-1", "ana@example.com", true, "Ana", "Pérez"));
+	}
+
+	@Test
+	void anonymousCannotReadOwnProfile() throws Exception {
+		mockMvc.perform(get(BASE + "/me"))
+				.andExpect(status().isUnauthorized());
+
+		verifyNoInteractions(useCase);
 	}
 
 	@Test
