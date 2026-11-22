@@ -117,9 +117,10 @@ valida el JWT por su cuenta.
    tests se autentican con `jwt()` del subject correcto.
 5. **CSRF no aplica.** La autenticación es stateless: el JWT viaja en `Authorization:
    Bearer`, nunca en cookies, y el navegador no lo adjunta automáticamente a peticiones
-   cross-site. Se desactiva `csrf` en la cadena compartida con una supresión documentada
-   de CodeQL (`java/spring-disabled-csrf-protection`). Si en el futuro se introducen
-   cookies de sesión, hay que revertir esta decisión.
+   cross-site. La cadena compartida configura `csrf.ignoringRequestMatchers(anyRequest)`
+   en lugar de `csrf.disable()`: expresa que ninguna petición necesita protección CSRF
+   sin desactivar el mecanismo. Si en el futuro se introducen cookies de sesión, hay que
+   revertir esta decisión.
 
 **Consecuencias:** (+) defensa en profundidad sin depender de la red interna; (+) no
 hay suplantación por header ni por body; (−) validación JWT en cada salto; (−) el

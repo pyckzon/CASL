@@ -6,11 +6,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -52,9 +52,11 @@ public class CaslSecurityConfiguration {
 			AuthenticationEntryPoint authenticationEntryPoint,
 			AccessDeniedHandler accessDeniedHandler,
 			JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
-		// codeql[java/spring-disabled-csrf-protection] API stateless: el JWT viaja en Authorization: Bearer, no en cookies; el navegador no lo adjunta automáticamente y CSRF no es aplicable
+		// API stateless: el JWT viaja en Authorization: Bearer, nunca en cookies. No hay
+		// credenciales ambientales que un navegador adjunte de forma automática, por lo que
+		// ninguna petición necesita protección CSRF.
 		http
-				.csrf(AbstractHttpConfigurer::disable)
+				.csrf(csrf -> csrf.ignoringRequestMatchers(AnyRequestMatcher.INSTANCE))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.requestMatchers("/api/**").authenticated()
