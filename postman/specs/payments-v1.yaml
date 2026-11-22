@@ -1,0 +1,107 @@
+openapi: 3.1.0
+info:
+  title: CASL Payments API
+  version: 1.0.0
+  summary: Pagos idempotentes
+servers:
+  - url: http://localhost:8673
+    description: Servicio directo
+  - url: http://localhost:8080
+    description: A traves del gateway
+tags:
+  - name: Payments
+paths:
+  /api/payments/v1/payments:
+    post:
+      operationId: charge
+      tags: [Payments]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChargeRequest' }
+      responses:
+        '201':
+          description: Pago procesado
+          headers:
+            Location: { schema: { type: string, format: uri } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/payments/v1/payments/{paymentId}:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    get:
+      operationId: getPayment
+      tags: [Payments]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/payments/v1/payments/{paymentId}/refund:
+    parameters: [ { $ref: '#/components/parameters/Id' } ]
+    post:
+      operationId: refundPayment
+      tags: [Payments]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+components:
+  parameters:
+    Id:
+      name: paymentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    ChargeRequest:
+      type: object
+      required: [amount, currency, idempotencyKey]
+      properties:
+        amount: { type: number, minimum: 0 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        idempotencyKey: { type: string }
+    PaymentStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, REFUNDED]
+    PaymentResponse:
+      type: object
+      required: [paymentId, idempotencyKey, amount, currency, status, createdAt, updatedAt]
+      properties:
+        paymentId: { type: string, format: uuid }
+        idempotencyKey: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        status: { $ref: '#/components/schemas/PaymentStatus' }
+        failureReason: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Problem:
+      $ref: '../users-v1.yaml#/components/schemas/Problem'
+  responses:
+    BadRequest:
+      description: Petición inválida
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Pago no encontrado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Conflicto
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
