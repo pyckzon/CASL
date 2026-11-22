@@ -25,7 +25,7 @@ class OrderApplicationServiceTest {
 
 	private final InMemoryOrderRepository repository = new InMemoryOrderRepository();
 	private final FakePaymentGateway gateway = new FakePaymentGateway();
-	private final OrderApplicationService service = new OrderApplicationService(repository, gateway,
+	private final OrderApplicationService service = new OrderApplicationService(repository, request -> gateway.charge(request),
 			Clock.fixed(NOW, ZoneOffset.UTC));
 
 	private OrderLine line() {
