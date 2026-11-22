@@ -1,5 +1,6 @@
 package com.casl.users;
 
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -134,15 +134,16 @@ class UsersApiIntegrationTest {
 
 	@Test
 	void firstAccessProvisionsExactlyOneUserFromToken() throws Exception {
-		String firstId = mockMvc.perform(get(BASE + "/me").with(token("sub-jit", "nueva@example.com")))
+		String firstBody = mockMvc.perform(get(BASE + "/me").with(token("sub-jit", "nueva@example.com")))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email").value("nueva@example.com"))
 				.andExpect(jsonPath("$.status").value("ACTIVE"))
 				.andReturn().getResponse().getContentAsString();
+		String userId = JsonPath.read(firstBody, "$.id");
 
 		mockMvc.perform(get(BASE + "/me").with(token("sub-jit", "nueva@example.com")))
 				.andExpect(status().isOk())
-				.andExpect(content().json(firstId));
+				.andExpect(jsonPath("$.id").value(userId));
 
 		mockMvc.perform(get(BASE))
 				.andExpect(status().isOk())

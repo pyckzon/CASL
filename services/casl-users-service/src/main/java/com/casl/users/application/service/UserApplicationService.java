@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,7 +55,7 @@ public class UserApplicationService implements UserUseCase {
 		if (repository.existsByEmail(email)) {
 			throw new EmailAlreadyExistsException(email.value());
 		}
-		Instant now = clock.instant();
+		Instant now = now();
 		User user = new User(
 				UUID.randomUUID(),
 				email,
@@ -107,7 +108,7 @@ public class UserApplicationService implements UserUseCase {
 				command.lastName(),
 				PhoneNumber.of(command.phone()),
 				parseStatus(command.status()),
-				clock.instant());
+				now());
 		User saved = repository.save(updated);
 		log.info("User updated id={} email={}", saved.id(), saved.email().value());
 		return saved;
@@ -141,7 +142,7 @@ public class UserApplicationService implements UserUseCase {
 		if (repository.existsByEmail(email)) {
 			throw new EmailAlreadyExistsException(email.value());
 		}
-		Instant now = clock.instant();
+		Instant now = now();
 		User created = repository.save(new User(
 				UUID.randomUUID(),
 				email,
@@ -162,6 +163,14 @@ public class UserApplicationService implements UserUseCase {
 		identities.save(new UserIdentity(user.id(), profile.provider(), profile.subject()));
 		log.info("Identity linked userId={} provider={}", user.id(), profile.provider());
 		return user;
+	}
+
+	/**
+	 * PostgreSQL {@code TIMESTAMPTZ} guarda microsegundos: truncar aquí evita que
+	 * la respuesta de la creación y el GET posterior difieran en nanosegundos.
+	 */
+	private Instant now() {
+		return clock.instant().truncatedTo(ChronoUnit.MICROS);
 	}
 
 	private static Email normalize(String email) {
