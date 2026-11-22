@@ -39,3 +39,6 @@ management:
     health:
       probes:
         enabled: true
+  metrics:
+    enable:
+      kafka: true
