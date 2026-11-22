@@ -3,7 +3,7 @@ springBoot = "4.1.2"
 dependencyManagement = "1.1.7"
 springCloud = "2025.1.4"  # reservado para Fase 4/7
 java = "21"
-lombok = "1.18.36"
+lombok = "1.18.48"
 archunit = "1.5.1"
 
 [libraries]
