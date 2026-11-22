@@ -58,6 +58,7 @@ services:
       CATALOG_SERVICE_URI: http://casl-catalog-service:8670
       CART_SERVICE_URI: http://casl-cart-service:8671
       ORDER_SERVICE_URI: http://casl-order-service:8672
+      PAYMENT_SERVICE_URI: http://casl-payment-service:8673
     ports:
       - "8080:8080"
 
@@ -156,7 +157,73 @@ services:
       interval: 5s
       retries: 10
 
+  casl-payment-service:
+    profiles:
+      - core
+    image: casl/casl-payment-service:0.0.1-SNAPSHOT
+    depends_on:
+      postgres-payments:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8673
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payments:5432/casl_payments
+      SPRING_DATASOURCE_USERNAME: casl
+      SPRING_DATASOURCE_PASSWORD: casl_dev
+    ports:
+      - "8673:8673"
+
+  postgres-payments:
+    profiles:
+      - core
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: casl_payments
+      POSTGRES_USER: casl
+      POSTGRES_PASSWORD: casl_dev
+    ports:
+      - "5436:5432"
+    volumes:
+      - pg_payments_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_payments"]
+      interval: 5s
+      retries: 10
+
+  casl-payment-service:
+    profiles:
+      - core
+    image: casl/casl-payment-service:0.0.1-SNAPSHOT
+    depends_on:
+      postgres-payments:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8673
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payments:5432/casl_payments
+      SPRING_DATASOURCE_USERNAME: casl
+      SPRING_DATASOURCE_PASSWORD: casl_dev
+    ports:
+      - "8673:8673"
+
+  postgres-payments:
+    profiles:
+      - core
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: casl_payments
+      POSTGRES_USER: casl
+      POSTGRES_PASSWORD: casl_dev
+    ports:
+      - "5436:5432"
+    volumes:
+      - pg_payments_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_payments"]
+      interval: 5s
+      retries: 10
+
 volumes:
   pg_users_data:
   pg_catalog_data:
   pg_orders_data:
+  pg_payments_data:
+  pg_payments_data:
