@@ -30,6 +30,10 @@ management:
       probes:
         enabled: true
 
+casl:
+  payment:
+    base-url: ${PAYMENT_BASE_URL:http://localhost:8673}
+
 resilience4j:
   circuitbreaker:
     configs:
