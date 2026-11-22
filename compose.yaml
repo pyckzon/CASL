@@ -212,7 +212,38 @@ services:
       CART_SERVICE_URI: http://casl-cart-service:8671
       ORDER_SERVICE_URI: http://casl-order-service:8672
       PAYMENT_SERVICE_URI: http://casl-payment-service:8673
+      SHIPPING_SERVICE_URI: http://casl-shipping-service:8675
     ports: ["8080:8080"]
+
+  casl-shipping-service:
+    profiles: [core]
+    image: casl/casl-shipping-service:0.0.1-SNAPSHOT
+    depends_on:
+      postgres-shipping:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8675
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-shipping:5432/casl_shipping
+      SPRING_DATASOURCE_USERNAME: casl
+      SPRING_DATASOURCE_PASSWORD: casl_dev
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports: ["8675:8675"]
+
+  postgres-shipping:
+    profiles: [core]
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: casl_shipping
+      POSTGRES_USER: casl
+      POSTGRES_PASSWORD: casl_dev
+    ports: ["5438:5432"]
+    volumes: [pg_shipping_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U casl -d casl_shipping"]
+      interval: 5s
+      retries: 10
 
 volumes:
   pg_users_data:
@@ -220,6 +251,7 @@ volumes:
   pg_orders_data:
   pg_payments_data:
   pg_notifications_data:
+  pg_shipping_data:
 
   # ========================================================================
   # Perfil: observability (reservado: Prometheus, Grafana, Loki, Tempo)
