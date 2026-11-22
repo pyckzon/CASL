@@ -52,8 +52,8 @@ public class CaslSecurityConfiguration {
 			AuthenticationEntryPoint authenticationEntryPoint,
 			AccessDeniedHandler accessDeniedHandler,
 			JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
+		// codeql[java/spring-disabled-csrf-protection] API stateless: el JWT viaja en Authorization: Bearer, no en cookies; el navegador no lo adjunta automáticamente y CSRF no es aplicable
 		http
-				// codeql[java/spring-disabled-csrf-protection] API stateless: el JWT viaja en Authorization: Bearer, no en cookies; el navegador no lo adjunta automáticamente y CSRF no es aplicable
 				.csrf(AbstractHttpConfigurer::disable)
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
