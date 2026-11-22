@@ -25,8 +25,9 @@ class OrderApplicationServiceTest {
 
 	private final InMemoryOrderRepository repository = new InMemoryOrderRepository();
 	private final FakePaymentGateway gateway = new FakePaymentGateway();
-	private final OrderApplicationService service = new OrderApplicationService(repository, request -> gateway.charge(request),
-			Clock.fixed(NOW, ZoneOffset.UTC));
+	private final com.casl.order.adapter.out.persistence.InMemoryOutboxRepository outbox = new com.casl.order.adapter.out.persistence.InMemoryOutboxRepository();
+	private final OrderApplicationService service = new OrderApplicationService(repository, request -> gateway.charge(request), outbox,
+			new tools.jackson.databind.ObjectMapper(), Clock.fixed(NOW, ZoneOffset.UTC));
 
 	private OrderLine line() {
 		return new OrderLine(P1, "SKU-1", "Widget", new BigDecimal("9.99"), "USD", 2);

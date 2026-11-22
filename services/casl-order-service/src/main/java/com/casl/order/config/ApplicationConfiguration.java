@@ -1,7 +1,6 @@
 package com.casl.order.config;
 
 import com.casl.order.adapter.out.payment.RestPaymentGateway;
-import com.casl.order.domain.port.OrderRepository;
 import com.casl.order.domain.port.PaymentGateway;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
