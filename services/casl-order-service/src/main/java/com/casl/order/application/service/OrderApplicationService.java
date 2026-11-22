@@ -3,16 +3,12 @@ package com.casl.order.application.service;
 import com.casl.order.application.command.CancelOrderCommand;
 import com.casl.order.application.command.CreateOrderCommand;
 import com.casl.order.application.port.in.OrderUseCase;
+import com.casl.order.application.port.PaymentCaller;
 import com.casl.order.domain.exception.OrderNotFoundException;
 import com.casl.order.domain.model.Order;
 import com.casl.order.domain.model.PaymentRequest;
 import com.casl.order.domain.model.PaymentResult;
 import com.casl.order.domain.port.OrderRepository;
-import com.casl.order.domain.port.PaymentGateway;
-import io.github.resilience4j.bulkhead.annotation.Bulkhead;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
-import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 @Log4j2
 @Service
@@ -28,12 +23,12 @@ import java.util.concurrent.CompletableFuture;
 public class OrderApplicationService implements OrderUseCase {
 
 	private final OrderRepository repository;
-	private final PaymentGateway paymentGateway;
+	private final PaymentCaller paymentCaller;
 	private final Clock clock;
 
-	public OrderApplicationService(OrderRepository repository, PaymentGateway paymentGateway, Clock clock) {
+	public OrderApplicationService(OrderRepository repository, PaymentCaller paymentCaller, Clock clock) {
 		this.repository = repository;
-		this.paymentGateway = paymentGateway;
+		this.paymentCaller = paymentCaller;
 		this.clock = clock;
 	}
 
@@ -71,7 +66,7 @@ public class OrderApplicationService implements OrderUseCase {
 				orderId.toString());
 		PaymentResult result;
 		try {
-			result = chargePayment(request).join();
+			result = paymentCaller.call(request);
 		} catch (Exception exception) {
 			log.error("Payment call failed for order {}", orderId, exception);
 			result = PaymentResult.rejected("payment service unavailable");
@@ -87,20 +82,6 @@ public class OrderApplicationService implements OrderUseCase {
 		Order saved = repository.save(failed);
 		log.warn("Order payment failed id={} reason={}", saved.orderId(), result.failureReason());
 		return saved;
-	}
-
-	@CircuitBreaker(name = "payment", fallbackMethod = "paymentFallback")
-	@Retry(name = "payment", fallbackMethod = "paymentFallback")
-	@Bulkhead(name = "payment", fallbackMethod = "paymentFallback")
-	@TimeLimiter(name = "payment", fallbackMethod = "paymentFallback")
-	public java.util.concurrent.CompletableFuture<PaymentResult> chargePayment(PaymentRequest request) {
-		return java.util.concurrent.CompletableFuture.supplyAsync(() -> paymentGateway.charge(request));
-	}
-
-	public java.util.concurrent.CompletableFuture<PaymentResult> paymentFallback(PaymentRequest request, Throwable throwable) {
-		log.warn("Payment fallback for order {}: {}", request.orderId(), throwable.toString());
-		return java.util.concurrent.CompletableFuture.completedFuture(
-				PaymentResult.rejected("payment service unavailable: " + throwable.getClass().getSimpleName()));
 	}
 
 	@Override
