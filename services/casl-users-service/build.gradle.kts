@@ -14,6 +14,7 @@ dependencies {
 	implementation(libs.spring.boot.starter.data.jpa)
 	implementation(libs.spring.boot.starter.validation)
 	implementation(libs.spring.boot.starter.oauth2.resource.server)
+	implementation(project(":services:casl-security"))
 	implementation(libs.spring.boot.flyway)
 	implementation(libs.flyway.core)
 	runtimeOnly(libs.flyway.database.postgresql)

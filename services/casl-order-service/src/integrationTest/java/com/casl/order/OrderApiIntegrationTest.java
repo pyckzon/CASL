@@ -6,16 +6,20 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import java.util.UUID;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -25,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 @TestPropertySource(properties = "casl.payment.simulated=true")
 class OrderApiIntegrationTest {
+
+	private static final UUID USER_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
 	@Container
 	static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
@@ -50,25 +56,30 @@ class OrderApiIntegrationTest {
 
 	@Test
 	void createAndGetOrder() throws Exception {
-		mockMvc.perform(post("/api/orders/v1/orders").contentType(MediaType.APPLICATION_JSON).content("""
-				{"items":[{"productId":"11111111-0000-0000-0000-000000000001","sku":"SKU-1","name":"Widget","unitPrice":9.99,"currency":"USD","quantity":2}]}
-				"""))
+		mockMvc.perform(post("/api/orders/v1/orders").with(user())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"items":[{"productId":"11111111-0000-0000-0000-000000000001","sku":"SKU-1","name":"Widget","unitPrice":9.99,"currency":"USD","quantity":2}]}
+								"""))
 				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.userId").value(USER_ID.toString()))
 				.andExpect(jsonPath("$.status").value("CREATED"))
 				.andExpect(jsonPath("$.totalAmount").value(19.98));
 	}
 
 	@Test
 	void payApprovesAndMarksPaid() throws Exception {
-		String response = mockMvc.perform(post("/api/orders/v1/orders").contentType(MediaType.APPLICATION_JSON).content("""
-				{"items":[{"productId":"11111111-0000-0000-0000-000000000001","sku":"SKU-1","name":"Widget","unitPrice":9.99,"currency":"USD","quantity":2}]}
-				"""))
+		String response = mockMvc.perform(post("/api/orders/v1/orders").with(user())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"items":[{"productId":"11111111-0000-0000-0000-000000000001","sku":"SKU-1","name":"Widget","unitPrice":9.99,"currency":"USD","quantity":2}]}
+								"""))
 				.andExpect(status().isCreated())
 				.andReturn().getResponse().getContentAsString();
 
 		String orderId = new tools.jackson.databind.ObjectMapper().readTree(response).get("orderId").asText();
 
-		mockMvc.perform(post("/api/orders/v1/orders/" + orderId + "/pay"))
+		mockMvc.perform(post("/api/orders/v1/orders/" + orderId + "/pay").with(user()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("PAID"))
 				.andExpect(jsonPath("$.paymentId").exists());
@@ -76,16 +87,24 @@ class OrderApiIntegrationTest {
 
 	@Test
 	void payRejectsAndCancelsWhenAmountTooHigh() throws Exception {
-		String response = mockMvc.perform(post("/api/orders/v1/orders").contentType(MediaType.APPLICATION_JSON).content("""
-				{"items":[{"productId":"11111111-0000-0000-0000-000000000001","sku":"SKU-1","name":"Widget","unitPrice":9.99,"currency":"USD","quantity":200}]}
-				"""))
+		String response = mockMvc.perform(post("/api/orders/v1/orders").with(user())
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"items":[{"productId":"11111111-0000-0000-0000-000000000001","sku":"SKU-1","name":"Widget","unitPrice":9.99,"currency":"USD","quantity":200}]}
+								"""))
 				.andExpect(status().isCreated())
 				.andReturn().getResponse().getContentAsString();
 
 		String orderId = new tools.jackson.databind.ObjectMapper().readTree(response).get("orderId").asText();
 
-		mockMvc.perform(post("/api/orders/v1/orders/" + orderId + "/pay"))
+		mockMvc.perform(post("/api/orders/v1/orders/" + orderId + "/pay").with(user()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("CANCELLED"));
+	}
+
+	private static RequestPostProcessor user() {
+		return jwt()
+				.jwt(token -> token.subject(USER_ID.toString()))
+				.authorities(new SimpleGrantedAuthority("ROLE_USER"));
 	}
 }

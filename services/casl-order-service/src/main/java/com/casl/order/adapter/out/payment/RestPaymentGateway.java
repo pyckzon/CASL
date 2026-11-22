@@ -13,9 +13,13 @@ import java.util.UUID;
 public class RestPaymentGateway implements PaymentGateway {
 
 	private final RestClient restClient;
+	private final KeycloakServiceTokenProvider tokenProvider;
 
-	public RestPaymentGateway(RestClient.Builder builder, @Value("${casl.payment.base-url:http://localhost:8673}") String baseUrl) {
+	public RestPaymentGateway(RestClient.Builder builder,
+			@Value("${casl.payment.base-url:http://localhost:8673}") String baseUrl,
+			KeycloakServiceTokenProvider tokenProvider) {
 		this.restClient = builder.baseUrl(baseUrl).build();
+		this.tokenProvider = tokenProvider;
 	}
 
 	@Override
@@ -24,6 +28,7 @@ public class RestPaymentGateway implements PaymentGateway {
 			PaymentResponse response = restClient.post()
 					.uri("/api/payments/v1/payments")
 					.header("Idempotency-Key", request.idempotencyKey())
+					.header("Authorization", "Bearer " + tokenProvider.get())
 					.body(new ChargePayload(request.amount(), request.currency(), request.idempotencyKey()))
 					.retrieve()
 					.body(PaymentResponse.class);

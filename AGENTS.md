@@ -21,14 +21,14 @@ Before responding to any non-trivial API engineering task — designing, impleme
 - Users: base path `/api/users/v1/users` (gateway `http://localhost:8080/api/users/**`); `GET /me` resuelve el usuario desde el `sub` del token (aprovisionamiento JIT), listar/leer otros exige `ADMIN`
 - Catalog: base path `/api/catalog/v1/products`, `/api/catalog/v1/categories` (gateway `http://localhost:8080/api/catalog/**`)
 - Errores en `application/problem+json` (RFC 9457) con `code` estable
-- Seguridad (Fase 5): Keycloak 26.8 (realm `casl`, puerto 8180) emite JWT; gateway, users y catalog validan el token (resource server, deny-by-default). Roles `USER` (lectura) y `ADMIN` (escritura). 401 `UNAUTHORIZED` / 403 `ACCESS_DENIED` en problem+json. Gateway propaga `X-User-Id` con el `sub` del JWT
-- Contratos: `postman/specs/users-v1.yaml`, `postman/specs/catalog-v1.yaml` (OpenAPI 3.1)
+- Seguridad (Fase 5): Keycloak 26.8 (realm `casl`, puerto 8180) emite JWT; los seis servicios validan el token (resource server, deny-by-default) con el módulo compartido `services/casl-security` (`@Import(CaslSecurityConfiguration.class)`). Roles `USER` (lectura/propio recurso) y `ADMIN` (escritura). 401 `UNAUTHORIZED` / 403 `ACCESS_DENIED` en problem+json. No existe `X-User-Id`: el dueño se deriva del `sub` del JWT. `order` llama a `payment` con cuenta de servicio (`client_credentials`)
+- Contratos: `postman/specs/users-v1.yaml`, `postman/specs/catalog-v1.yaml`, `cart-v1.yaml`, `orders-v1.yaml`, `payments-v1.yaml` (OpenAPI 3.1)
 - Models in `com.casl.users.models` (`users`, `request`)
 
 ## Tests
 - JUnit Platform via `useJUnitPlatform()`; coverage gate 50% LINE (convention plugin)
-- `@WebMvcTest` slices exclude `SecurityAutoConfiguration`, `ServletWebSecurityAutoConfiguration` y las de OAuth2 resource server, con `@AutoConfigureMockMvc(addFilters = false)`; la autorización se prueba aparte (`UserSecurityTest`, `ProductSecurityTest`, `GatewaySecurityTest`)
-- Tests de integración (`src/integrationTest`, Testcontainers) usan `@SpringBootTest` + `@AutoConfigureMockMvc` y `@WithMockUser(roles = "ADMIN")`
+- `@WebMvcTest` slices exclude `SecurityAutoConfiguration`, `ServletWebSecurityAutoConfiguration` y las de OAuth2 resource server; los controladores con `@PreAuthorize` importan `SecurityConfig` y usan `jwt()` del postprocesor (filtros activos). La autorización se prueba aparte (`UserSecurityTest`, `ProductSecurityTest`, `GatewaySecurityTest`, `CartSecurityTest`, `OrderSecurityTest`, `PaymentSecurityTest`)
+- Tests de integración (`src/integrationTest`, Testcontainers) usan `@SpringBootTest` + `@AutoConfigureMockMvc` y JWT de prueba vía `jwt()` (subject UUID para `cart`/`order`, `service-account-casl-order-service` para `payment`; users mantiene `@WithMockUser(roles = "ADMIN")` en las operaciones de administración)
 - Run all: `./gradlew test`. Run single class: `./gradlew :services:casl-users-service:test --tests com.casl.users.adapter.in.web.UserControllerTest`
 
 ## Notes
