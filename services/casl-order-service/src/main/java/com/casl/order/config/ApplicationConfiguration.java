@@ -19,11 +19,6 @@ public class ApplicationConfiguration {
 	}
 
 	@Bean
-	OrderRepository orderRepository(com.casl.order.adapter.out.persistence.OrderJpaRepository repository) {
-		return new com.casl.order.adapter.out.persistence.OrderPersistenceAdapter(repository);
-	}
-
-	@Bean
 	PaymentGateway paymentGateway(RestClient.Builder builder,
 			@Value("${casl.payment.base-url:http://localhost:8673}") String baseUrl,
 			@Value("${casl.payment.simulated:false}") boolean simulated) {
