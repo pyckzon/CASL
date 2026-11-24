@@ -33,8 +33,8 @@ class GatewaySecurityTest {
 	}
 
 	@Test
-	void healthEndpointStaysPublic() throws Exception {
+	void actuatorEndpointsAreNotExposedOnApplicationPort() throws Exception {
 		mockMvc.perform(get("/actuator/health"))
-				.andExpect(status().isOk());
+				.andExpect(status().isNotFound());
 	}
 }

@@ -21,6 +21,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Validate Compose profiles
+        run: docker compose --profile core --profile observability config -q
+
       - uses: actions/setup-java@v6
         with:
           distribution: temurin

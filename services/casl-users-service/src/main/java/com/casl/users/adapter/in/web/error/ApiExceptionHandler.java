@@ -50,7 +50,7 @@ public class ApiExceptionHandler {
 	ResponseEntity<ProblemDetail> handleEmailConflict(EmailAlreadyExistsException exception,
 			HttpServletRequest request) {
 		return problem(HttpStatus.CONFLICT, "USER_EMAIL_ALREADY_EXISTS", "Email already registered",
-				exception.getMessage(), request);
+				"The supplied email is already registered", request);
 	}
 
 	@ExceptionHandler(InvalidUserException.class)

@@ -2,10 +2,11 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <!-- %pii es un converter propio (registrado por el annotation processor
-                 de Log4j2) que enmascara emails y teléfonos etiquetados. -->
-            <PatternLayout
-                    pattern="%d{HH:mm:ss.SSS} [%t] %highlight{%-5level}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=blue} %logger{36} - %pii%n"/>
+            <!-- JsonTemplateLayout con event template PII: el resolver custom "piiMessage"
+                 enmascara emails/teléfonos del campo message antes de emitir el JSON. -->
+            <JsonTemplateLayout eventTemplateUri="classpath:casl-log-event-pii.json">
+                <EventTemplateAdditionalField key="service" value="${spring:spring.application.name}"/>
+            </JsonTemplateLayout>
         </Console>
     </Appenders>
     <Loggers>

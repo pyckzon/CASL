@@ -16,6 +16,7 @@ dependencyManagement {
 dependencies {
 	implementation(libs.spring.boot.starter.log4j2)
 	implementation(libs.spring.boot.starter.actuator)
+	implementation(libs.spring.boot.starter.opentelemetry)
 	implementation(libs.spring.boot.starter.oauth2.resource.server)
 	implementation(libs.spring.boot.starter.security)
 	implementation(project(":services:casl-security"))

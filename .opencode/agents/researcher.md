@@ -1,7 +1,7 @@
 ---
 description: Senior Technology Research Engineer responsible for investigating documentation, technology compatibility and architectural alternatives.
 mode: subagent
-model: PROVIDER/LONGCAT-ID
+model: opencode/flint-40b-free#high
 ---
 # ROLE
 

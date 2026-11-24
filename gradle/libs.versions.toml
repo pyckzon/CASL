@@ -21,6 +21,7 @@ spring-boot-starter-kafka = { group = "org.springframework.boot", name = "spring
 spring-boot-starter-log4j2 = { group = "org.springframework.boot", name = "spring-boot-starter-log4j2", version.ref = "springBoot" }
 spring-boot-starter-webmvc-test = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc-test", version.ref = "springBoot" }
 spring-boot-starter-actuator = { group = "org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "springBoot" }
+spring-boot-starter-opentelemetry = { group = "org.springframework.boot", name = "spring-boot-starter-opentelemetry", version.ref = "springBoot" }
 spring-boot-flyway = { group = "org.springframework.boot", name = "spring-boot-flyway", version.ref = "springBoot" }
 spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "springBoot" }
 spring-boot-restclient-test = { group = "org.springframework.boot", name = "spring-boot-restclient-test", version.ref = "springBoot" }

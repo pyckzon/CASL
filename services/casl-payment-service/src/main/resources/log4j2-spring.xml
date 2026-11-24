@@ -2,7 +2,9 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <JsonTemplateLayout eventTemplateUri="classpath:casl-log-event.json">
+                <EventTemplateAdditionalField key="service" value="${spring:spring.application.name}"/>
+            </JsonTemplateLayout>
         </Console>
     </Appenders>
     <Loggers>

@@ -1,7 +1,7 @@
 ---
 description: Lead Software Architect responsible for architecture, technical planning, decision making and engineering team orchestration.
 mode: primary
-model: PROVIDER/BIG-PICKLE-ID
+model: opencode/big-pickle
 ---
 # ROLE
 
