@@ -1,5 +1,5 @@
 [versions]
-springBoot = "4.1.2"
+springBoot = "4.2.0"
 dependencyManagement = "1.1.7"
 springCloud = "2025.1.4"  # reservado para Fase 4/7
 java = "21"
