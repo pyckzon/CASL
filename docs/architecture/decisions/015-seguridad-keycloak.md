@@ -129,10 +129,10 @@ secretos en Fase 10.
 
 ## Decisiones abiertas
 
-- Invalidación de sesiones cuando un usuario pasa a `INACTIVE`: hoy el token sigue
+- ~~Invalidación de sesiones cuando un usuario pasa a `INACTIVE`: hoy el token sigue
   siendo criptográficamente válido hasta expirar; la comprobación de estado se hace en
-  cada llamada a `/me`. La extensión a todos los endpoints está planificada para Fase 7
-  en [`docs/roadmap.md`](../../roadmap.md), incluida la política de degradación cuando
-  `users` no responda.
+  cada llamada a `/me`.~~ Resuelta en Fase 7 por ADR-018: el estado se comprueba en todos
+  los endpoints protegidos mediante el JWT del llamador; si `users` no responde y no hay
+  caché válida, se devuelve `503 USER_STATUS_UNAVAILABLE`.
 - Keycloak en modo producción (HTTPS, base de datos externa) se configura en Fase 10 (K8s).
 

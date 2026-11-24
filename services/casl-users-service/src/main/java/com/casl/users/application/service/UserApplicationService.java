@@ -85,13 +85,19 @@ public class UserApplicationService implements UserUseCase {
 	@Override
 	@Transactional
 	public User currentUser(IdentityProfile profile) {
-		User user = identities.findByProviderAndSubject(profile.provider(), profile.subject())
-				.flatMap(identity -> repository.findById(identity.userId()))
-				.orElseGet(() -> provision(profile));
+		User user = resolve(profile);
 		if (user.status() != UserStatus.ACTIVE) {
 			throw new InactiveUserException(user.id());
 		}
 		return user;
+	}
+
+	@Override
+	@Transactional
+	public UserStatus statusOf(IdentityProfile profile) {
+		// El JIT puede escribir (crear usuario o vincular identidad), por lo que
+		// esta comprobación no puede ejecutarse en una transacción de solo lectura.
+		return resolve(profile).status();
 	}
 
 	@Override
@@ -121,6 +127,12 @@ public class UserApplicationService implements UserUseCase {
 		identities.deleteByUserId(user.id());
 		repository.deleteById(user.id());
 		log.info("User deleted id={}", user.id());
+	}
+
+	private User resolve(IdentityProfile profile) {
+		return identities.findByProviderAndSubject(profile.provider(), profile.subject())
+				.flatMap(identity -> repository.findById(identity.userId()))
+				.orElseGet(() -> provision(profile));
 	}
 
 	/**
@@ -157,9 +169,10 @@ public class UserApplicationService implements UserUseCase {
 	}
 
 	private User link(User user, IdentityProfile profile) {
-		// Si dos peticiones aprovisionan el mismo sujeto a la vez, la restricción
-		// única (provider, subject) deja ganar a una y la otra recibe 409
-		// IDENTITY_ALREADY_LINKED; reintentar resuelve el vínculo ganador.
+		// La restricción única (provider, subject) evita vínculos duplicados: si dos
+		// peticiones aprovisionan el mismo sujeto a la vez, la perdedora recibe 409
+		// IDENTITY_ALREADY_LINKED y un reintento de la petición resuelve el vínculo
+		// ganador.
 		identities.save(new UserIdentity(user.id(), profile.provider(), profile.subject()));
 		log.info("Identity linked userId={} provider={}", user.id(), profile.provider());
 		return user;

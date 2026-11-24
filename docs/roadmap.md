@@ -34,27 +34,37 @@ Resultado: **no quedan PRs abiertos**. Checks requeridos en verde: `unit tests`,
 
 ## Fase 7 — Descubrimiento, configuración y estado de identidad
 
+**Estado:** en curso (ADR-017 y ADR-018 aceptados).
+
 Cierra los dos pendientes explícitos de ADR-002 y ADR-015.
 
 **Decisión arquitectónica:** no introducir Eureka ni Spring Cloud Config (ADR-017).
 Compose resuelve los servicios por nombre en local y Kubernetes Services + DNS lo hará
 en Fase 10. La configuración sigue siendo YAML versionado más variables de entorno.
 
+**Política de degradación (ADR-018):** caché de 60 s con margen de obsolescencia de 300 s;
+si `users` no responde se reutiliza el último valor conocido y, si no existe, se deniega con
+`503 USER_STATUS_UNAVAILABLE`. No hay fail-open.
+
 Alcance:
 
 1. ADR-017 y cierre del punto “Config Server + Eureka” de ADR-002.
-2. Comprobación del estado del usuario en **todos** los endpoints, no solo en `/me`.
-   Se centraliza en `casl-security` con una llamada acotada a `users`, caché corta y
-   política de degradación documentada.
-3. Tests de seguridad para usuarios `INACTIVE` con roles `USER` y `ADMIN` en los
+2. `UserStatusEnforcementFilter` en `casl-security` y verificación del estado en **todos**
+   los endpoints protegidos, reenviando el JWT del llamador a `users`.
+3. `GET /api/users/v1/users/me/status` en `users-v1.yaml` y cableado de la URL
+   `USERS_SERVICE_URI` en el perfil `core`.
+4. Tests de seguridad para usuarios `INACTIVE` con roles `USER` y `ADMIN` en los
    ocho desplegables.
 
 Criterios de aceptación:
 
-- Un usuario `INACTIVE` recibe `403 ACCESS_DENIED` en cualquier endpoint protegido.
+- Un usuario `INACTIVE` recibe `403 USER_INACTIVE` en cualquier endpoint protegido de los
+  ocho desplegables, con `USER` o con `ADMIN`.
+- Una indisponibilidad de `users` sin caché válida devuelve `503 USER_STATUS_UNAVAILABLE`;
+  nunca acceso implícito.
 - El `sub` del JWT sigue siendo la única fuente de identidad; no reaparece `X-User-Id`.
-- No se añaden contenedores de discovery/config al perfil `core`.
-- ADR-002, ADR-015 y este roadmap quedan actualizados.
+- No se añaden contenedores de discovery/config ni secretos nuevos al perfil `core`.
+- ADR-002, ADR-015, ADR-018 y este roadmap quedan actualizados.
 
 ## Fase 8 — Contratos ejecutables y E2E autenticado
 

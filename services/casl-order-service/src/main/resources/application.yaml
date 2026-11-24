@@ -50,6 +50,9 @@ management:
       service: ${spring.application.name}
 
 casl:
+  security:
+    user-status:
+      base-url: ${USERS_SERVICE_URI:http://localhost:8666}
   payment:
     base-url: ${PAYMENT_BASE_URL:http://localhost:8673}
 

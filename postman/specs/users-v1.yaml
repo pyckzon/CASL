@@ -18,6 +18,11 @@ info:
     - El rol `USER` solo puede leer su propio perfil (`GET /me`); listar o leer otros
       usuarios y todas las escrituras requieren `ADMIN`.
     - Rol insuficiente: `403` con `code: ACCESS_DENIED`; usuario inactivo: `403` `USER_INACTIVE`.
+
+    Estado del usuario (Fase 7):
+    - El estado se comprueba en todos los endpoints protegidos; `users` es la fuente de verdad.
+    - Usuario inactivo: `403` con `code: USER_INACTIVE`.
+    - Indisponibilidad de `users`: `503` con `code: USER_STATUS_UNAVAILABLE`.
   contact:
     name: CASL
   license:
@@ -160,6 +165,31 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /api/users/v1/users/me/status:
+    get:
+      operationId: getCurrentUserStatus
+      tags: [Users]
+      summary: Devuelve el estado del usuario autenticado
+      description: |
+        Devuelve `{"status":"ACTIVE"|"INACTIVE"}` sin PII. El estado se comprueba
+        en todos los endpoints protegidos; el resto de endpoints responde `403 USER_INACTIVE`
+        cuando el usuario está dado de baja.
+      responses:
+        '200':
+          description: Estado del usuario autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserStatusResponse'
+        '401':
+          description: Token ausente o inválido (`UNAUTHORIZED`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/users/v1/users/{id}:
     parameters:
       - $ref: '#/components/parameters/UserId'
@@ -270,6 +300,14 @@ components:
       type: string
       description: Estado del usuario
       enum: [ACTIVE, INACTIVE]
+
+    UserStatusResponse:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/UserStatus'
 
     CreateUserRequest:
       type: object
@@ -466,3 +504,17 @@ components:
                 title: Internal Server Error
                 status: 500
                 code: INTERNAL_ERROR
+    UserStatusUnavailable:
+      description: El estado del usuario no pudo verificarse (servicio de usuarios no disponible)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            unavailable:
+              value:
+                type: https://errors.casl.dev/user-status-unavailable
+                title: User status unavailable
+                status: 503
+                instance: /api/users/v1/users/me/status
+                code: USER_STATUS_UNAVAILABLE

@@ -6,6 +6,7 @@ import com.casl.users.application.command.UpdateUserCommand;
 import com.casl.users.application.query.UserQuery;
 import com.casl.users.domain.model.PageResult;
 import com.casl.users.domain.model.User;
+import com.casl.users.domain.model.UserStatus;
 
 import java.util.UUID;
 
@@ -25,6 +26,13 @@ public interface UserUseCase {
 	 * email verificado o aprovisiona un usuario nuevo (just-in-time).
 	 */
 	User currentUser(IdentityProfile profile);
+
+	/**
+	 * Devuelve el estado del usuario sin aplicar la regla de negocio de
+	 * {@link #currentUser}: un usuario inactivo responde {@code INACTIVE} y el
+	 * caller decide cómo traducirlo (p. ej. el filtro de seguridad).
+	 */
+	UserStatus statusOf(IdentityProfile profile);
 
 	PageResult<User> list(UserQuery query);
 
