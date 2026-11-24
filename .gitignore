@@ -38,3 +38,7 @@ out/
 
 ### Postman plugin cache (estado local del plugin de Postman) ###
 .postman/
+
+### Postman local: credenciales de desarrollo e informes de ejecución ###
+postman/environments/*.local.environment.yaml
+postman/reports/

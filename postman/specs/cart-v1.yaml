@@ -177,7 +177,7 @@ components:
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
     Problem:
-      $ref: '../users-v1.yaml#/components/schemas/Problem'
+      $ref: './users-v1.yaml#/components/schemas/Problem'
   responses:
     Unauthorized:
       description: Token ausente o inválido

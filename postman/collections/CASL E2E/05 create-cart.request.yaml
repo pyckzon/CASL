@@ -1,0 +1,18 @@
+$kind: http-request
+name: 05 Crear carrito (USER)
+method: POST
+url: '{{base_url}}/api/cart/v1/carts'
+order: 500
+headers:
+  - key: Authorization
+    value: 'Bearer {{user_token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Carrito creado para el sub del JWT', () => {
+        pm.response.to.have.status(201);
+        const cartId = pm.response.json().cartId;
+        pm.expect(cartId).to.be.a('string').that.is.not.empty;
+        pm.collectionVariables.set('cart_id', cartId);
+      });

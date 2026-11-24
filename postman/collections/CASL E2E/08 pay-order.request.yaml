@@ -1,0 +1,16 @@
+$kind: http-request
+name: 08 Pagar orden (USER -> order -> payment)
+method: POST
+url: '{{base_url}}/api/orders/v1/orders/{{order_id}}/pay'
+order: 800
+headers:
+  - key: Authorization
+    value: 'Bearer {{user_token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Order-service cobra con la cuenta de servicio', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().paymentId).to.be.a('string').that.is.not.empty;
+      });

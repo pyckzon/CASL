@@ -1,0 +1,36 @@
+$kind: http-request
+name: 07 Crear orden (USER)
+method: POST
+url: '{{base_url}}/api/orders/v1/orders'
+order: 700
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{user_token}}'
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        {
+          "productId": "{{product_id}}",
+          "sku": "{{product_sku}}",
+          "name": "{{product_name}}",
+          "unitPrice": {{product_price}},
+          "currency": "{{product_currency}}",
+          "quantity": 1
+        }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Orden creada con propietario derivado del JWT', () => {
+        pm.response.to.have.status(201);
+        const body = pm.response.json();
+        pm.expect(body.orderId).to.be.a('string').that.is.not.empty;
+        pm.collectionVariables.set('order_id', body.orderId);
+        pm.collectionVariables.set('order_total', String(body.totalAmount));
+      });

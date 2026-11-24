@@ -1,0 +1,54 @@
+$kind: collection
+name: CASL E2E
+description: |-
+  Saga E2E autenticada contra `docker compose --profile core up -d`.
+  Orden: login USER/ADMIN/cuenta de servicio → producto → carrito → orden →
+  pago idempotente → shipping. La entrega de eventos y el DLT de Kafka se
+  comprueban con `postman/scripts/verify-kafka.ps1` (Postman no puede leer Kafka).
+  Los tokens y credenciales NO están versionados: se inyectan en el environment
+  en tiempo de ejecución.
+variables:
+  - key: base_url
+    value: 'http://localhost:8080'
+    description: Gateway del stack local
+  - key: keycloak_url
+    value: 'http://localhost:8180'
+    description: Keycloak dev del perfil core
+  - key: realm
+    value: casl
+  - key: gateway_client_id
+    value: casl-gateway
+  - key: order_client_id
+    value: casl-order-service
+  - key: idempotency_key
+    value: casl-phase8-e2e
+    description: Clave fija para comprobar el reintento de pago
+  - key: user_token
+    value: ''
+    description: Se rellena en runtime con el login USER
+  - key: admin_token
+    value: ''
+    description: Se rellena en runtime con el login ADMIN
+  - key: service_token
+    value: ''
+    description: Se rellena en runtime con client_credentials
+  - key: product_sku
+    value: ''
+  - key: product_id
+    value: ''
+  - key: product_name
+    value: ''
+  - key: product_price
+    value: ''
+  - key: product_currency
+    value: ''
+  - key: cart_id
+    value: ''
+  - key: order_id
+    value: ''
+  - key: order_total
+    value: ''
+  - key: payment_id
+    value: ''
+  - key: shipment_id
+    value: ''

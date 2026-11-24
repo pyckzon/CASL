@@ -1,0 +1,75 @@
+openapi: 3.1.0
+info:
+  title: CASL Notification API (contrato asíncrono)
+  version: 1.0.0
+  summary: Consumo de eventos de dominio y entrega idempotente de notificaciones
+  description: |
+    `casl-notification-service` no expone endpoints HTTP de negocio: `paths` está
+    vacío a propósito. No se inventan rutas que no existen en el servicio. Este
+    documento fija el contrato observable del canal asíncrono para que el E2E
+    pueda verificarlo con las herramientas de Kafka del perfil `core`.
+
+    Canales consumidos (topic, grupo `casl-notification-service`):
+    - `order.created.v1`
+    - `user.created.v1`
+    - `payment.approved.v1`
+    - `payment.rejected.v1`
+
+    Cada mensaje es un `DomainEventEnvelope` (JSON). La tabla `inbox` garantiza
+    idempotencia por `eventId`: un evento repetido no genera una segunda notificación.
+    Tras agotar 3 reintentos, el registro se publica en `<topic>.DLT` y se incrementa
+    la métrica `casl.dlt.published` con `service=casl-notification-service`.
+
+    Errores: no hay respuestas HTTP de negocio. Si se añade un adaptador HTTP en el
+    futuro, debe usar `application/problem+json` con `code` estable según ADR-004;
+    el esquema `Problem` y las respuestas se declaran abajo para que el contrato
+    de errores sea reutilizable por los siete specs. La Fase 7 añade además
+    `403 USER_INACTIVE` y `503 USER_STATUS_UNAVAILABLE` en cualquier endpoint
+    protegido que se incorpore.
+  contact:
+    name: CASL
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8674
+    description: Servicio directo (solo diagnóstico; sin API de negocio)
+  - url: http://localhost:8080
+    description: Gateway (sin ruta de negocio hacia notification)
+
+# OpenAPI 3.1 exige `paths`; el servicio es solo consumidor Kafka, así que está vacío.
+paths: {}
+
+components:
+  schemas:
+    DomainEventEnvelope:
+      type: object
+      required: [eventId, eventType, aggregateId, occurredAt, schemaVersion]
+      properties:
+        eventId: { type: string, format: uuid }
+        eventType:
+          type: string
+          enum: [order.created.v1, user.created.v1, payment.approved.v1, payment.rejected.v1]
+        aggregateId: { type: string, minLength: 1 }
+        occurredAt: { type: string, format: date-time }
+        schemaVersion: { type: integer, minimum: 1 }
+        traceId: { type: string, nullable: true }
+        payload: { type: object }
+    Problem:
+      $ref: './users-v1.yaml#/components/schemas/Problem'
+  responses:
+    Unauthorized:
+      description: Token ausente o inválido (`UNAUTHORIZED`), si se expone HTTP
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Acceso denegado (`ACCESS_DENIED`, `USER_INACTIVE`, `USER_STATUS_UNAVAILABLE`)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    InternalError:
+      description: Error inesperado (`INTERNAL_ERROR`)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }

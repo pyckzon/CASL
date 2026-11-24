@@ -1,0 +1,19 @@
+$kind: http-request
+name: 11 Consultar envio creado por payment.approved.v1
+method: GET
+url: '{{base_url}}/api/shipping/v1/shipments/order/{{order_id}}'
+order: 1100
+headers:
+  - key: Authorization
+    value: 'Bearer {{user_token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('El evento payment.approved.v1 creo el envio', () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.orderId).to.equal(pm.collectionVariables.get('order_id'));
+        pm.expect(body.status).to.equal('CREATED');
+        pm.collectionVariables.set('shipment_id', body.shipmentId);
+      });

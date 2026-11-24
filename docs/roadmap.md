@@ -19,6 +19,8 @@ y en los pendientes de los PRs. La numeración puede reordenarse sin cambiar el 
 | 4.1–4.3 | Kafka + outbox, notification, shipping, saga coreografiada, inbox/DLT/lag | `c290cd9`, `ca443d3`, `9e8fe22`, `b532a91`, `b5260a3` |
 | 5.1–5.4 | Keycloak, JWT, roles, JIT y zero-trust en los ocho desplegables | `ae3827d`, `c422a9a`, `88f6fa5`, `433c84b` |
 | 6 | Trazas OTLP, logs JSON correlacionados, métricas y stack local | `3d00e5c` |
+| 7 | Estado de usuario en los ocho desplegables, caché y fail-closed | `e6851ff` |
+| 8 | Siete specs, colección E2E autenticada y verificación Kafka/DLT | PR #41 |
 | Mantenimiento | Wrapper Gradle 9.9.2; Boot 4.2.0 + Spring Cloud 2026.0.0 | `f5eff50`, `f609eb9` |
 
 Resultado: **no quedan PRs abiertos**. Checks requeridos en verde: `unit tests`,
@@ -34,7 +36,7 @@ Resultado: **no quedan PRs abiertos**. Checks requeridos en verde: `unit tests`,
 
 ## Fase 7 — Descubrimiento, configuración y estado de identidad
 
-**Estado:** en curso (ADR-017 y ADR-018 aceptados).
+**Estado:** completada (PR #40, `e6851ff`; ADR-017 y ADR-018 aceptados).
 
 Cierra los dos pendientes explícitos de ADR-002 y ADR-015.
 
@@ -68,6 +70,8 @@ Criterios de aceptación:
 
 ## Fase 8 — Contratos ejecutables y E2E autenticado
 
+**Estado:** completada (PR #41; ADR-019 aceptada).
+
 Cierra el pendiente “E2E autenticado en Postman” del PR #31 y la ausencia de contratos
 para los servicios asíncronos.
 
@@ -84,6 +88,13 @@ Criterios de aceptación:
 - La colección se ejecuta contra `docker compose --profile core up -d` sin secretos reales.
 - El flujo cubre los Roles `USER` y la cuenta de servicio `casl-order-service`.
 - Ningún token ni credencial queda versionado.
+
+**Verificación local:** `python postman/scripts/validate-specs.py` (siete specs OK),
+`postman collection lint 'postman/collections/CASL E2E' --fail-severity warning`
+(12 requests, sin incidentes) y `postman environment lint 'postman/environments/CASL Dev.environment.yaml'`
+(sin incidentes). `postman spec lint` y `postman collection run`
+devuelven `401` con el token local caducado; el detalle y la alternativa están en ADR-019.
+`postman/README.md` documenta cómo ejecutar la colección y `verify-kafka.ps1`.
 
 ## Fase 9 — Hardening de seguridad y calidad
 

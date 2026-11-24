@@ -1,0 +1,37 @@
+$kind: http-request
+name: 04 Crear producto (ADMIN)
+method: POST
+url: '{{base_url}}/api/catalog/v1/products'
+order: 400
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{admin_token}}'
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      pm.collectionVariables.set('product_sku', 'PHASE8-' + Date.now());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Producto creado por ADMIN', () => {
+        pm.response.to.have.status(201);
+        const body = pm.response.json();
+        pm.collectionVariables.set('product_id', body.id);
+        pm.collectionVariables.set('product_name', body.name);
+        pm.collectionVariables.set('product_price', String(body.price));
+        pm.collectionVariables.set('product_currency', body.currency);
+      });
+body:
+  type: json
+  content: |-
+    {
+      "sku": "{{product_sku}}",
+      "name": "Producto E2E Fase 8",
+      "description": "Producto efimero para la saga",
+      "price": 12.50,
+      "currency": "USD",
+      "initialStock": 10
+    }

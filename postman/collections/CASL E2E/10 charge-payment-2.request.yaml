@@ -1,0 +1,31 @@
+$kind: http-request
+name: 10 Reintento con la misma clave (idempotencia)
+method: POST
+url: '{{base_url}}/api/payments/v1/payments'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{service_token}}'
+  - key: Idempotency-Key
+    value: '{{idempotency_key}}'
+body:
+  type: json
+  content: |-
+    {
+      "amount": {{order_total}},
+      "currency": "{{product_currency}}",
+      "idempotencyKey": "{{idempotency_key}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Reintento NO recobra y devuelve el mismo paymentId', () => {
+        pm.response.to.have.status(201);
+        const body = pm.response.json();
+        pm.expect(body.paymentId).to.equal(pm.collectionVariables.get('payment_id'));
+        pm.expect(body.idempotencyKey).to.equal(pm.collectionVariables.get('idempotency_key'));
+        pm.expect(body.status).to.equal('APPROVED');
+      });
