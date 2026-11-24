@@ -16,8 +16,9 @@ de `compose.yaml` está reservado pero vacío.
 ## Decisión
 
 1. **Trazas.** Todos los desplegables (siete servicios + gateway) incluyen
-   `org.springframework.boot:spring-boot-starter-opentelemetry`. Boot 4.1.2 gestiona
-   `micrometer-tracing-bridge-otel` 1.7.2 y `opentelemetry-exporter-otlp` 1.62.0.
+   `org.springframework.boot:spring-boot-starter-opentelemetry`. Boot 4.2.0 gestiona
+   `micrometer-tracing-bridge-otel` 1.8.0 y `opentelemetry-exporter-otlp` 1.68.0
+   (verificado con `dependencyInsight` tras el PR #38).
    Configuración: `management.tracing.sampling.probability` (por defecto `0.1`,
    `1.0` en desarrollo) y
    `management.opentelemetry.tracing.export.otlp.endpoint=${OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}`

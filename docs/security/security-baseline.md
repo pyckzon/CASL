@@ -1,6 +1,6 @@
 # Baseline de seguridad — CASL
 
-> Estado: activo · Última revisión: 2026-11-21 · Responsable: Architect
+> Estado: activo · Última revisión: 2026-11-24 · Responsable: Architect
 
 ## 1. Estado verificado
 
@@ -10,11 +10,11 @@
 | Secretos en el historial | `gitleaks detect` | **0** en 15 commits |
 | Dependabot alerts | GitHub | habilitado |
 | Secret scanning + push protection | GitHub | habilitado (repo público) |
-| SAST | CodeQL `security-extended` | workflow activo en PR + semanal |
+| SAST | CodeQL `security-extended` | workflow activo en PR, push a `Master` y semanal |
 
-Versiones observadas en la imagen: Spring Boot 4.1.2, Spring Framework 7.0.10, Tomcat 11.0.27, Log4j2 2.25.5, Jackson 3.1.7, Micrometer 1.17.2.
+Instantánea del 2026-11-21: Spring Boot 4.1.2, Spring Framework 7.0.10, Tomcat 11.0.27, Log4j2 2.25.5, Jackson 3.1.7, Micrometer 1.17.2. El repositorio ya usa Spring Boot 4.2.0 y Spring Cloud 2026.0.0 (PR #38), por lo que esa imagen debe reconstruirse para volver a medir.
 
-Una foto no es un proceso: la vigencia depende de los escaneos automáticos de §2.
+Una foto no es un proceso: la vigencia depende de los escaneos automáticos de §2. El trabajo pendiente está en [`docs/roadmap.md`](../roadmap.md).
 
 ## 2. Capas
 
@@ -24,11 +24,11 @@ Una foto no es un proceso: la vigencia depende de los escaneos automáticos de �
 | Secretos en push | GitHub secret scanning + push protection | **activo** | automático |
 | Dependencias (CVE) | Dependabot alerts + security updates | **activo** | continuo |
 | SAST | CodeQL `security-extended` | **activo** | PR + push a `Master` + semanal |
-| Contenedor | Trivy image | **diferido** | Fase 2–3 (medir coste en CI) |
-| Dependencias en build | OWASP Dependency-Check | **diferido** | Fase 2–3 (requiere NVD key) |
-| SBOM | CycloneDX (Gradle) | **diferido** | Fase 2–3 |
-| DAST | OWASP ZAP baseline/API | **diferido** | Fase 5–6 (necesita Keycloak + contrato) |
-| IaC / Helm | Trivy misconfig / Checkov | **diferido** | Fase 10 |
+| Contenedor | Trivy image | **activo (no bloqueante)** | CI, imagen `casl-users-service` |
+| Dependencias en build | OWASP Dependency-Check | **diferido** | Fase 9 (reevaluar frente a SBOM + Trivy) |
+| SBOM | CycloneDX (Gradle) | **diferido** | Fase 9 |
+| DAST | OWASP ZAP baseline/API | **diferido** | Fase 9 (Keycloak y contratos ya disponibles) |
+| IaC / Helm | Trivy misconfig / Checkov | **diferido** | Fase 10 (cuando exista Helm) |
 
 Criterio de activación de lo diferido: medir duración del job y ruido antes de volverlo bloqueante.
 
@@ -70,7 +70,8 @@ Sin fecha de expiración, la excepción no es válida.
 - DTOs de salida independientes del dominio; nunca se serializa una entidad completa.
 - `@ToString.Exclude` en campos sensibles; prohibido loggear payloads completos.
 - Errores al cliente como `problem+json` sin stacktrace ni mensajes internos.
-- Actuator expone únicamente `health` (`management.endpoints.web.exposure.include=health`).
+- Actuator expone `health,metrics,prometheus` en el puerto management `9090`, no publicado
+  al host; la cadena `@Order(1)` de `casl-security` restringe ese puerto.
 - Validación de entrada con Bean Validation + límites de tamaño.
 - Credenciales solo por variable de entorno o secreto; nunca en `application.yaml` versionado.
 
@@ -78,7 +79,8 @@ Sin fecha de expiración, la excepción no es válida.
 
 | Brecha | Impacto | Mitigación actual |
 |---|---|---|
-| Sin escaneo de dependencias en el build (no hay lockfiles) | CVE en dependencia nueva se detecta solo al construir imagen o por Dependabot | Dependabot activo; lockfiles en Fase 2–3 |
-| Sin DAST | Endpoints no probados dinámicamente | Tests de slice + revisión de contrato |
-| Credenciales dev en `compose.yaml` | Solo aceptable en local | Documentado; secretos reales en Fase 5+ |
-| CodeQL no analiza el dominio de negocio aún (esqueleto) | Cobertura real baja hasta Fase 1 | Se activa con el código nuevo |
+| Sin SBOM ni escaneo de dependencias del build | CVE transitivos se detectan al construir la imagen o por Dependabot | Dependabot + Trivy image activos; SBOM y Trivy fs en Fase 9 |
+| Sin DAST | Endpoints no probados dinámicamente | Tests de slice, integración y revisión de contrato; ZAP en Fase 9 |
+| Credenciales dev en `compose.yaml` | Solo aceptable en local | Realm de desarrollo documentado; gestor de secretos en Fase 10 |
+| Sin segmentación de red entre servicios | Un servicio comprometido puede alcanzar otros puertos | Zero-trust JWT en cada servicio y puerto management no publicado |
+| Sin escaneo de IaC | No hay manifiestos K8s/Helm que analizar | Trivy misconfig/Checkov en Fase 10 |

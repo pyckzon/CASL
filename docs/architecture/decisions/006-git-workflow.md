@@ -28,7 +28,10 @@ Riesgos concretos:
    - Conventional Commits (`feat:`, `fix:`, `build(deps):`, `ci:`, `docs:`);
    - un PR por fase o por cambio significativo, con el template `.github/pull_request_template.md`;
    - releases etiquetadas `vX.Y.Z` (SemVer) cuando exista algo desplegable.
-4. **Checks requeridos**: se añadirán al ruleset cuando los workflows existan en la rama por defecto (`CI / test + coverage` y `CodeQL`). Un check requerido que nunca se ejecuta bloquea todos los PRs, por eso la activación es posterior al primer merge.
+4. **Checks requeridos**: `unit tests`, `integration tests` y `CodeQL (java-kotlin)`
+   están activos en el ruleset desde que los workflows existen en `Master`. Un check
+   requerido que nunca se ejecuta bloquea todos los PRs, por eso la activación fue
+   posterior al primer merge. `trivy image scan (non-blocking)` no es requerido.
 
 ## Consecuencias
 
