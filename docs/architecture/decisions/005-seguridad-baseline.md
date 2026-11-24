@@ -36,3 +36,12 @@ Restricciones:
 - (−) Trivy y ZAP no cubren todavía contenedor ni runtime; queda documentado como brecha en `docs/security/security-baseline.md`.
 - (−) CodeQL `security-extended` puede generar hallazgos de baja prioridad en código nuevo; se gestionan por la política de SLA.
 - Revisión obligatoria: al cerrar Fase 3 se reevalúa activar Trivy + Dependency-Check + SBOM y se registra la medición.
+
+## Actualización — cierre de Fase 6 (2026-11-24)
+
+- **Trivy image** quedó activo en Fase 2.3 como job *no bloqueante* de CI, sobre la
+  imagen `casl/casl-users-service`. Se mantiene report-only hasta definir la allowlist.
+- **CodeQL**, **Dependabot**, el *secret scanning* de GitHub y gitleaks siguen activos.
+- **SBOM CycloneDX**, **DAST con OWASP ZAP** y la decisión sobre **OWASP Dependency-Check**
+  se trasladan a Fase 9; el escaneo de IaC queda en Fase 10, cuando existan manifiestos.
+- El detalle de alcance y criterios de aceptación está en `docs/roadmap.md`.
