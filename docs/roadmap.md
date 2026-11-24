@@ -34,7 +34,7 @@ Resultado: **no quedan PRs abiertos**. Checks requeridos en verde: `unit tests`,
 
 ## Fase 7 — Descubrimiento, configuración y estado de identidad
 
-**Estado:** en curso (ADR-017 y ADR-018 aceptados).
+**Estado:** completada (PR #40, `e6851ff`; ADR-017 y ADR-018 aceptados).
 
 Cierra los dos pendientes explícitos de ADR-002 y ADR-015.
 
@@ -68,6 +68,9 @@ Criterios de aceptación:
 
 ## Fase 8 — Contratos ejecutables y E2E autenticado
 
+**Estado:** implementada en `feat/phase-8-contracts-e2e`, pendiente de PR y merge
+(ADR-019 aceptada).
+
 Cierra el pendiente “E2E autenticado en Postman” del PR #31 y la ausencia de contratos
 para los servicios asíncronos.
 
@@ -84,6 +87,13 @@ Criterios de aceptación:
 - La colección se ejecuta contra `docker compose --profile core up -d` sin secretos reales.
 - El flujo cubre los Roles `USER` y la cuenta de servicio `casl-order-service`.
 - Ningún token ni credencial queda versionado.
+
+**Verificación local:** `python postman/scripts/validate-specs.py` (siete specs OK),
+`postman collection lint 'postman/collections/CASL E2E' --fail-severity warning`
+(12 requests, sin incidentes) y `postman environment lint 'postman/environments/CASL Dev.environment.yaml'`
+(sin incidentes). `postman spec lint` y `postman collection run`
+devuelven `401` con el token local caducado; el detalle y la alternativa están en ADR-019.
+`postman/README.md` documenta cómo ejecutar la colección y `verify-kafka.ps1`.
 
 ## Fase 9 — Hardening de seguridad y calidad
 

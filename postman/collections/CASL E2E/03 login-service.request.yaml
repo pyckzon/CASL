@@ -1,0 +1,27 @@
+$kind: http-request
+name: 03 Login cuenta de servicio casl-order-service
+method: POST
+url: '{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token'
+order: 300
+headers:
+  - key: Content-Type
+    value: application/x-www-form-urlencoded
+body:
+  type: urlencoded
+  content:
+    - key: grant_type
+      value: client_credentials
+    - key: client_id
+      value: '{{order_client_id}}'
+    - key: client_secret
+      value: '{{order_client_secret}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('client_credentials emite token de casl-order-service', () => {
+        pm.response.to.have.status(200);
+        const token = pm.response.json().access_token;
+        pm.expect(token).to.be.a('string').that.is.not.empty;
+        pm.collectionVariables.set('service_token', token);
+      });

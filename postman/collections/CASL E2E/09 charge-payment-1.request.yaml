@@ -1,0 +1,30 @@
+$kind: http-request
+name: 09 Cobro con Idempotency-Key (primera llamada)
+method: POST
+url: '{{base_url}}/api/payments/v1/payments'
+order: 900
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{service_token}}'
+  - key: Idempotency-Key
+    value: '{{idempotency_key}}'
+body:
+  type: json
+  content: |-
+    {
+      "amount": {{order_total}},
+      "currency": "{{product_currency}}",
+      "idempotencyKey": "{{idempotency_key}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Primer cobro aprobado', () => {
+        pm.response.to.have.status(201);
+        const body = pm.response.json();
+        pm.expect(body.status).to.equal('APPROVED');
+        pm.collectionVariables.set('payment_id', body.paymentId);
+      });

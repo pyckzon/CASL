@@ -1,0 +1,170 @@
+openapi: 3.1.0
+info:
+  title: CASL Shipping API
+  version: 1.0.0
+  summary: Envíos creados a partir del evento payment.approved.v1
+  description: |
+    Contrato HTTP del servicio de envíos. El recurso `shipment` se crea de forma
+    asíncrona cuando `payment.approved.v1` se consume correctamente; por eso una
+    orden recién pagada puede devolver `404` hasta que el evento se procesa.
+
+    Convenciones:
+    - Todas las operaciones requieren `Authorization: Bearer <JWT>` emitido por Keycloak.
+    - Errores en `application/problem+json` (RFC 9457) con extensión `code` estable.
+    - La identidad del llamador sale del claim `sub`; no existe `X-User-Id`.
+
+    Estado del usuario (Fase 7): el estado se comprueba en todos los endpoints
+    protegidos. Usuario inactivo → `403` `USER_INACTIVE`. Indisponibilidad de
+    `users` sin caché válida → `503` `USER_STATUS_UNAVAILABLE`.
+
+    Integración asíncrona (no HTTP): el consumidor Kafka suscribe `payment.approved.v1`
+    con el grupo `casl-shipping-service`. Tras agotar 3 reintentos, el registro se
+    publica en `payment.approved.v1.DLT` y se incrementa la métrica
+    `casl.dlt.published` con `service=casl-shipping-service`. `shipping-v1.yaml`
+    describe solo la interfaz HTTP; el canal Kafka se documenta aquí para que el
+    E2E pueda comprobar entrega y DLT fuera de Postman.
+  contact:
+    name: CASL
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8675
+    description: Servicio directo (desarrollo)
+  - url: http://localhost:8080
+    description: A través del gateway
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Shipping
+    description: Consulta y transiciones del envío de una orden
+
+paths:
+  /api/shipping/v1/shipments/order/{orderId}:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    get:
+      operationId: getShipmentByOrder
+      tags: [Shipping]
+      summary: Devuelve el envío asociado a una orden
+      description: Puede devolver `404` mientras el evento de pago aprobado no se ha procesado.
+      responses:
+        '200':
+          description: Envío encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/shipping/v1/shipments/{shipmentId}/dispatch:
+    parameters:
+      - $ref: '#/components/parameters/ShipmentId'
+    post:
+      operationId: dispatchShipment
+      tags: [Shipping]
+      summary: Despacha el envío y asigna transportista y número de seguimiento
+      responses:
+        '200':
+          description: Envío despachado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/shipping/v1/shipments/{shipmentId}/deliver:
+    parameters:
+      - $ref: '#/components/parameters/ShipmentId'
+    post:
+      operationId: deliverShipment
+      tags: [Shipping]
+      summary: Marca el envío como entregado
+      responses:
+        '200':
+          description: Envío entregado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token JWT emitido por Keycloak (realm `casl`)
+  parameters:
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ShipmentId:
+      name: shipmentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    ShipmentStatus:
+      type: string
+      enum: [CREATED, DISPATCHED, DELIVERED, CANCELLED]
+    ShipmentResponse:
+      type: object
+      required: [shipmentId, orderId, status, createdAt, updatedAt]
+      properties:
+        shipmentId: { type: string, format: uuid }
+        orderId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/ShipmentStatus' }
+        carrier: { type: string, nullable: true }
+        trackingNumber: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Problem:
+      $ref: './users-v1.yaml#/components/schemas/Problem'
+  responses:
+    Unauthorized:
+      description: Token ausente o inválido (`UNAUTHORIZED`)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Acceso denegado; incluye `ACCESS_DENIED`, `USER_INACTIVE` y `USER_STATUS_UNAVAILABLE`
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Envío no encontrado (`SHIPMENT_NOT_FOUND`)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    InternalError:
+      description: Error inesperado (`INTERNAL_ERROR`)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }

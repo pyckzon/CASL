@@ -1,0 +1,29 @@
+$kind: http-request
+name: 01 Login USER
+method: POST
+url: '{{keycloak_url}}/realms/{{realm}}/protocol/openid-connect/token'
+order: 100
+headers:
+  - key: Content-Type
+    value: application/x-www-form-urlencoded
+body:
+  type: urlencoded
+  content:
+    - key: grant_type
+      value: password
+    - key: client_id
+      value: '{{gateway_client_id}}'
+    - key: username
+      value: '{{dev_username}}'
+    - key: password
+      value: '{{dev_password}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Login USER devuelve access_token', () => {
+        pm.response.to.have.status(200);
+        const token = pm.response.json().access_token;
+        pm.expect(token).to.be.a('string').that.is.not.empty;
+        pm.collectionVariables.set('user_token', token);
+      });

@@ -1,0 +1,16 @@
+$kind: http-request
+name: 12 Entregar envio (USER)
+method: POST
+url: '{{base_url}}/api/shipping/v1/shipments/{{shipment_id}}/deliver'
+order: 1200
+headers:
+  - key: Authorization
+    value: 'Bearer {{user_token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Transicion a DELIVERED', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().status).to.equal('DELIVERED');
+      });

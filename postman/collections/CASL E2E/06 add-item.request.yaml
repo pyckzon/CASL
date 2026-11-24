@@ -1,0 +1,27 @@
+$kind: http-request
+name: 06 Anadir item al carrito (USER)
+method: POST
+url: '{{base_url}}/api/cart/v1/carts/{{cart_id}}/items'
+order: 600
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{user_token}}'
+body:
+  type: json
+  content: |-
+    {
+      "productId": "{{product_id}}",
+      "sku": "{{product_sku}}",
+      "quantity": 1
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Item anadido al carrito propio', () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.totalItems).to.equal(1);
+      });

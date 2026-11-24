@@ -1,0 +1,27 @@
+name: CASL Dev
+values:
+  - key: dev_username
+    value: ''
+    enabled: true
+    type: default
+    description: Usuario USER del realm dev; se inyecta en runtime
+  - key: dev_password
+    value: ''
+    enabled: true
+    type: secret
+    description: Password del usuario USER; nunca versionado
+  - key: admin_username
+    value: ''
+    enabled: true
+    type: default
+    description: Usuario ADMIN del realm dev; se inyecta en runtime
+  - key: admin_password
+    value: ''
+    enabled: true
+    type: secret
+    description: Password del usuario ADMIN; nunca versionado
+  - key: order_client_secret
+    value: ''
+    enabled: true
+    type: secret
+    description: Client secret de casl-order-service; nunca versionado
