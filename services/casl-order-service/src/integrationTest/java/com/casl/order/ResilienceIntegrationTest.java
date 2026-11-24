@@ -121,12 +121,14 @@ class ResilienceIntegrationTest {
 	}
 
 	@Test
-	void healthAndMetricsAreNotExposedOnApplicationPort() throws Exception {
+	void healthIsNotExposedAndMetricsIsDeniedOnApplicationPort() throws Exception {
+		// /actuator/health no está mapeado en el puerto de aplicación: 404.
 		mockMvc.perform(get("/actuator/health"))
 				.andExpect(status().isNotFound());
 
+		// /actuator/metrics está denegado por la cadena @Order(2): 401 sin token.
 		mockMvc.perform(get("/actuator/metrics"))
-				.andExpect(status().isNotFound());
+				.andExpect(status().isUnauthorized());
 	}
 
 	private static RequestPostProcessor user() {
