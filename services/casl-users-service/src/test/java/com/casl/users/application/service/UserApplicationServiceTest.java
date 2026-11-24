@@ -48,7 +48,7 @@ class UserApplicationServiceTest {
 
 		assertThatThrownBy(() -> service.create(new CreateUserCommand("ANA@example.com", "Otra", "Persona", null)))
 				.isInstanceOf(EmailAlreadyExistsException.class)
-				.hasMessageContaining("ana@example.com");
+				.hasMessage("The email is already registered");
 	}
 
 	@Test

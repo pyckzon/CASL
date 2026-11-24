@@ -1,7 +1,7 @@
 ---
 description: Senior Java Backend Engineer responsible exclusively for application development and automated testing.
 mode: subagent
-model: PROVIDER/DEEPSEEK-ID
+model: opencode/flint-40b-free#high
 ---
 # ROLE
 

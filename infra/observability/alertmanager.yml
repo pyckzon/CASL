@@ -1,0 +1,17 @@
+route:
+  receiver: casl-default
+  group_by: ["alertname", "service"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+
+receivers:
+  - name: casl-default
+    # Receptores reales (email/Slack/PagerDuty) se deciden en Fase 10.
+    # Webhook local sin consumidor: mantiene una configuración válida sin
+    # introducir secretos ni integraciones externas en el entorno dev.
+    webhook_configs:
+      - url: http://127.0.0.1:9099/alerts
+        send_resolved: false
+
+inhibit_rules: []

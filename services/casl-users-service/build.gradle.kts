@@ -11,6 +11,7 @@ dependencies {
 	implementation(libs.spring.boot.starter.webmvc)
 	implementation(libs.spring.boot.starter.log4j2)
 	implementation(libs.spring.boot.starter.actuator)
+	implementation(libs.spring.boot.starter.opentelemetry)
 	implementation(libs.spring.boot.starter.data.jpa)
 	implementation(libs.spring.boot.starter.validation)
 	implementation(libs.spring.boot.starter.oauth2.resource.server)
@@ -19,6 +20,12 @@ dependencies {
 	implementation(libs.flyway.core)
 	runtimeOnly(libs.flyway.database.postgresql)
 	runtimeOnly(libs.postgresql)
+	// Event template JSON para JsonTemplateLayout (ADR-016): runtime para el layout
+	// y compileOnly/annotationProcessor para el resolver PII custom (@Plugin).
+	runtimeOnly("org.apache.logging.log4j:log4j-layout-template-json")
+	compileOnly("org.apache.logging.log4j:log4j-layout-template-json")
+	annotationProcessor("org.apache.logging.log4j:log4j-layout-template-json")
+	testCompileOnly("org.apache.logging.log4j:log4j-layout-template-json")
 	developmentOnly(libs.spring.boot.devtools)
 
 	testImplementation(libs.spring.boot.starter.test)

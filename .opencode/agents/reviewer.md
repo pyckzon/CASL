@@ -1,7 +1,7 @@
 ---
 description: Independent Senior Software Engineer responsible for code quality, security, performance and architecture compliance.
 mode: subagent
-model: PROVIDER/BEAM-ID
+model: opencode/beam-free
 ---
 # ROLE
 

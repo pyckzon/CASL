@@ -2,8 +2,9 @@
 <Configuration status="WARN" packages="com.casl.catalog.config.logging">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout
-                    pattern="%d{HH:mm:ss.SSS} [%t] %highlight{%-5level}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=blue} %logger{36} - %msg%n"/>
+            <JsonTemplateLayout eventTemplateUri="classpath:casl-log-event.json">
+                <EventTemplateAdditionalField key="service" value="${spring:spring.application.name}"/>
+            </JsonTemplateLayout>
         </Console>
     </Appenders>
     <Loggers>

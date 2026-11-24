@@ -177,7 +177,8 @@ class UserControllerTest {
 						{"email":"ana@example.com","firstName":"Ana","lastName":"Pérez","status":"ACTIVE"}
 						"""))
 				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("USER_EMAIL_ALREADY_EXISTS"));
+				.andExpect(jsonPath("$.code").value("USER_EMAIL_ALREADY_EXISTS"))
+				.andExpect(jsonPath("$.detail", org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("ana@example.com"))));
 	}
 
 	@Test

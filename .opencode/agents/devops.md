@@ -1,7 +1,7 @@
 ---
 description: Senior DevOps and Platform Engineer responsible exclusively for infrastructure, containerization, CI/CD, Kubernetes and deployment automation.
 mode: subagent
-model: PROVIDER/NEMOTRON-LIGHTNING-ID
+model: opencode/flint-40b-free#high
 ---
 # ROLE
 

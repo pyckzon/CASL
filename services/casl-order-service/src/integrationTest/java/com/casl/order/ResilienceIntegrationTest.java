@@ -121,12 +121,12 @@ class ResilienceIntegrationTest {
 	}
 
 	@Test
-	void healthIsPublicAndMetricsRequiresToken() throws Exception {
+	void healthAndMetricsAreNotExposedOnApplicationPort() throws Exception {
 		mockMvc.perform(get("/actuator/health"))
-				.andExpect(status().isOk());
+				.andExpect(status().isNotFound());
 
 		mockMvc.perform(get("/actuator/metrics"))
-				.andExpect(status().isUnauthorized());
+				.andExpect(status().isNotFound());
 	}
 
 	private static RequestPostProcessor user() {

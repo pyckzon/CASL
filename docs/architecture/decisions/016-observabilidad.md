@@ -35,10 +35,14 @@ de `compose.yaml` está reservado pero vacío.
    `CaslSecurityConfiguration` añade una cadena `@Order(1)` restringida a ese puerto
    que permite solo los endpoints de Actuator y aplica `denyAll` al resto; la cadena
    `@Order(2)` mantiene el deny-by-default actual para el puerto de aplicación.
+   Los ocho servicios desplegables importan esta configuración, incluidos
+   `notification` y `shipping`.
 4. **Alertas y stack local.** Perfil `observability` en Compose con Prometheus
    v3.16.0, Alertmanager v0.35.0, Grafana 13.2.6, Tempo 3.1.1, Loki 3.7.10 y
    Promtail 3.6.11. Reglas: error rate 5xx, circuit breaker abierto, lag de Kafka y
    publicaciones a DLT. Provisioning de datasources y un dashboard mínimo incluidos.
+   Alertmanager usa un receptor webhook local sin consumidor en dev; las integraciones
+   reales de notificación se deciden en Fase 10.
 5. **Métrica de DLT.** `notification` y `shipping` envuelven el
    `DeadLetterPublishingRecoverer` con un `ConsumerRecordRecoverer` que incrementa
    `casl.dlt.published` (tag `service`), base de la cuarta alerta.
@@ -56,6 +60,8 @@ de `compose.yaml` está reservado pero vacío.
 - (+) Trazas, logs y métricas comparten `traceId`/`spanId` de extremo a extremo.
 - (+) El puerto de scraping no es alcanzable desde el host ni desde la API.
 - (−) Hay que mantener reglas, dashboard y provisioning versionados en `infra/`.
+- (−) El enmascaramiento cubre emails y teléfonos etiquetados; otros datos personales
+  no se infieren de forma genérica y deben evitarse en mensajes de log.
 - (−) Los `@SpringBootTest` no auto-configuran exportadores de trazas (comportamiento
   documentado de Boot 4); las pruebas se centran en configuración y serialización.
 
@@ -63,4 +69,6 @@ de `compose.yaml` está reservado pero vacío.
 
 - `./gradlew.bat test`, `compileIntegrationTestJava`, `jacocoTestCoverageVerification`.
 - `docker compose --profile core --profile observability config` (sin daemon).
+- `promtool check rules/config` y `amtool check-config` para reglas y receptores.
+- `tempo -config.verify`, `loki -verify-config` y `promtail -check-syntax`.
 - Revisión independiente y checks de PR antes de squash merge en `Master`.

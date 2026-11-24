@@ -30,6 +30,9 @@ dependencies {
 	// Genera Log4j2Plugins.dat para registrar plugins propios (@Plugin) sin
 	// depender del escaneo de paquetes, que está deprecado.
 	annotationProcessor("org.apache.logging.log4j:log4j-core")
+	// Layout JSON para logs estructurados con event template propio
+	// (ver ADR-016 / casl-log-event*.json).
+	runtimeOnly("org.apache.logging.log4j:log4j-layout-template-json")
 	testCompileOnly("org.projectlombok:lombok")
 	testAnnotationProcessor("org.projectlombok:lombok")
 }

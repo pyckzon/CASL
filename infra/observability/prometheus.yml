@@ -1,0 +1,56 @@
+﻿global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+rule_files:
+  - /etc/prometheus/alert-rules.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+  - job_name: casl-users-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["casl-users-service:9090"]
+        labels: {service: casl-users-service}
+  - job_name: casl-catalog-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["casl-catalog-service:9090"]
+        labels: {service: casl-catalog-service}
+  - job_name: casl-cart-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["casl-cart-service:9090"]
+        labels: {service: casl-cart-service}
+  - job_name: casl-order-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["casl-order-service:9090"]
+        labels: {service: casl-order-service}
+  - job_name: casl-payment-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["casl-payment-service:9090"]
+        labels: {service: casl-payment-service}
+  - job_name: casl-notification-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["casl-notification-service:9090"]
+        labels: {service: casl-notification-service}
+  - job_name: casl-shipping-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["casl-shipping-service:9090"]
+        labels: {service: casl-shipping-service}
+  - job_name: casl-gateway
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["casl-gateway:9090"]
+        labels: {service: casl-gateway}
