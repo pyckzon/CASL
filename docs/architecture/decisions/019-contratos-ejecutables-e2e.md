@@ -47,9 +47,15 @@ así que no aplica cambiar de plan ni reintentar.
 6. **Verificación Kafka fuera de Postman.** Ni una colección ni un Flow pueden leer
    tópicos. `postman/scripts/verify-kafka.ps1` usa los binarios de Kafka y `psql` del
    perfil `core` para aseverar entrega de `order.created.v1`/`payment.approved.v1`,
-   idempotencia de `notification` (una sola fila en `notifications` e `inbox` para un
-   mismo `eventId` repetido) y publicación en `payment.approved.v1.DLT` tras agotar
-   reintentos. El contador `casl.dlt.published` queda como señal complementaria.
+   idempotencia de `notification` (mismo número de filas en `notifications` y una sola
+   fila en `inbox` al repetir un `eventId`) y publicación en `payment.approved.v1.DLT`
+   tras agotar reintentos. El contador `casl.dlt.published` queda como señal complementaria.
+7. **Corrección encontrada por el E2E:** `NotificationService` persiste una fila por
+   canal (email, log, webhook) con el mismo `event_id`, pero V1 declaraba
+   `UNIQUE(event_id)`. El segundo `saveAndFlush` violaba la restricción, impedía marcar
+   el `inbox` y enviaba cada evento al DLT. La migración V2 sustituye esa restricción
+   por `UNIQUE(event_id, channel)`. Sin este cambio la aserción de entrega de eventos
+   no podría cumplirse.
 
 ## Alternativas rechazadas
 

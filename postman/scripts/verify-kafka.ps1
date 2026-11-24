@@ -43,10 +43,12 @@ $before = [int](Read-Notification "select count(*) from notifications where even
 Assert-Condition ($before -eq 0) 'evento de prueba no procesado antes del envio'
 Write-Topic 'order.created.v1' $envelope
 Start-Sleep -Seconds $WaitSeconds
+$first = [int](Read-Notification "select count(*) from notifications where event_id = '$eventId'")
+Assert-Condition ($first -ge 1) "evento entregado y persistido por al menos un canal (filas=$first)"
 Write-Topic 'order.created.v1' $envelope
 Start-Sleep -Seconds $WaitSeconds
 $after = [int](Read-Notification "select count(*) from notifications where event_id = '$eventId'")
-Assert-Condition ($after -eq 1) "reintento del evento no duplica notificacion (antes=$before, despues=$after)"
+Assert-Condition ($after -eq $first) "reintento del evento no duplica notificacion (primera=$first, despues=$after)"
 $inbox = [int](Read-Notification "select count(*) from inbox where event_id = '$eventId'")
 Assert-Condition ($inbox -eq 1) 'inbox registra el evento exactamente una vez'
 
