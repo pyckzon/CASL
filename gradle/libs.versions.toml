@@ -1,7 +1,7 @@
 [versions]
 springBoot = "4.2.0"
 dependencyManagement = "1.1.7"
-springCloud = "2025.1.4"  # reservado para Fase 4/7
+springCloud = "2026.0.0"  # alineado con Spring Boot 4.2.0
 java = "21"
 lombok = "1.18.48"
 archunit = "1.5.1"
