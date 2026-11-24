@@ -78,6 +78,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      casl-users-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8670
       OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
@@ -87,6 +89,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: casl_dev
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      USERS_SERVICE_URI: http://casl-users-service:8666
       KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/casl
       KEYCLOAK_JWK_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/certs
     ports: ["8670:8670"]
@@ -97,6 +100,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      casl-users-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8671
       OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
@@ -105,6 +110,7 @@ services:
       SPRING_REDIS_PORT: 6379
       CASL_CART_TTL_MINUTES: 1440
       CATALOG_BASE_URL: http://casl-catalog-service:8670
+      USERS_SERVICE_URI: http://casl-users-service:8666
       KEYCLOAK_ISSUER_URI: http://localhost:8180/realms/casl
       KEYCLOAK_JWK_URI: http://keycloak:8080/realms/casl/protocol/openid-connect/certs
     ports: ["8671:8671"]
@@ -129,6 +135,8 @@ services:
     depends_on:
       postgres-orders:
         condition: service_healthy
+      casl-users-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8672
       OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
@@ -138,6 +146,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: casl_dev
       PAYMENT_BASE_URL: http://casl-payment-service:8673
       CASL_PAYMENT_SIMULATED: "false"
+      USERS_SERVICE_URI: http://casl-users-service:8666
     ports: ["8672:8672"]
 
   postgres-payments:
@@ -160,6 +169,8 @@ services:
     depends_on:
       postgres-payments:
         condition: service_healthy
+      casl-users-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8673
       OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
@@ -167,6 +178,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payments:5432/casl_payments
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
+      USERS_SERVICE_URI: http://casl-users-service:8666
     ports: ["8673:8673"]
 
   kafka:
@@ -215,6 +227,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      casl-users-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8674
       OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
@@ -223,6 +237,7 @@ services:
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      USERS_SERVICE_URI: http://casl-users-service:8666
     ports: ["8674:8674"]
 
   casl-gateway:
@@ -254,6 +269,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      casl-users-service:
+        condition: service_started
     environment:
       SERVER_PORT: 8675
       OTLP_TRACES_ENDPOINT: http://tempo:4318/v1/traces
@@ -262,6 +279,7 @@ services:
       SPRING_DATASOURCE_USERNAME: casl
       SPRING_DATASOURCE_PASSWORD: casl_dev
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      USERS_SERVICE_URI: http://casl-users-service:8666
     ports: ["8675:8675"]
 
   postgres-shipping:

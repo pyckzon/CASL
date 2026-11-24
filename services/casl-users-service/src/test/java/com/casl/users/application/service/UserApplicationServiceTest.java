@@ -1,6 +1,7 @@
 package com.casl.users.application.service;
 
 import com.casl.users.application.command.CreateUserCommand;
+import com.casl.users.application.command.IdentityProfile;
 import com.casl.users.application.command.UpdateUserCommand;
 import com.casl.users.application.query.UserQuery;
 import com.casl.users.domain.exception.EmailAlreadyExistsException;
@@ -9,6 +10,7 @@ import com.casl.users.domain.exception.UserNotFoundException;
 import com.casl.users.domain.model.Email;
 import com.casl.users.domain.model.PageResult;
 import com.casl.users.domain.model.User;
+import com.casl.users.domain.model.UserIdentity;
 import com.casl.users.domain.model.UserStatus;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +26,7 @@ class UserApplicationServiceTest {
 
 	private static final Instant NOW = Instant.parse("2026-01-01T10:00:00Z");
 	private static final Instant LATER = NOW.plusSeconds(3600);
+	private static final String SUBJECT = "0b6b5d1e-1111-2222-3333-444455556666";
 
 	private final InMemoryUserRepository repository = new InMemoryUserRepository();
 	private final InMemoryUserIdentityRepository identities = new InMemoryUserIdentityRepository();
@@ -141,6 +144,21 @@ class UserApplicationServiceTest {
 
 		assertThat(repository.findById(created.id())).isEmpty();
 		assertThatThrownBy(() -> service.delete(created.id())).isInstanceOf(UserNotFoundException.class);
+	}
+
+	@Test
+	void statusOfProvisionsNewUserAsActiveOnFirstAccess() {
+		assertThat(service.statusOf(new IdentityProfile(UserIdentity.KEYCLOAK, SUBJECT, "nueva@example.com", true,
+				"Ana", "Pérez"))).isEqualTo(UserStatus.ACTIVE);
+	}
+
+	@Test
+	void statusOfReturnsInactiveStatusForDeactivatedUser() {
+		User created = service.create(new CreateUserCommand("ana@example.com", "Ana", "Pérez", null));
+		service.update(created.id(), new UpdateUserCommand("ana@example.com", "Ana", "Pérez", null, "INACTIVE"));
+
+		assertThat(service.statusOf(new IdentityProfile(UserIdentity.KEYCLOAK, SUBJECT, "ana@example.com", true,
+				"Ana", "Pérez"))).isEqualTo(UserStatus.INACTIVE);
 	}
 
 	private UserApplicationService serviceAt(Instant instant) {

@@ -62,3 +62,8 @@ management:
   metrics:
     tags:
       service: ${spring.application.name}
+
+casl:
+  security:
+    user-status:
+      base-url: ${USERS_SERVICE_URI:http://localhost:8666}

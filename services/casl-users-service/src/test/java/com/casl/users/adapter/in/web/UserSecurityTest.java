@@ -153,6 +153,47 @@ class UserSecurityTest {
 				.andExpect(status().isCreated());
 	}
 
+	@Test
+	void meStatusReturnsActiveStatus() throws Exception {
+		when(useCase.statusOf(any())).thenReturn(UserStatus.ACTIVE);
+
+		mockMvc.perform(get(BASE + "/me/status").with(jwt()
+						.jwt(token -> token
+								.subject("sub-1")
+								.claim("email", "ana@example.com")
+								.claim("email_verified", true)
+								.claim("given_name", "Ana")
+								.claim("family_name", "Pérez"))
+						.authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("ACTIVE"));
+	}
+
+	@Test
+	void meStatusReturnsInactiveStatus() throws Exception {
+		when(useCase.statusOf(any())).thenReturn(UserStatus.INACTIVE);
+
+		mockMvc.perform(get(BASE + "/me/status").with(jwt()
+						.jwt(token -> token
+								.subject("sub-1")
+								.claim("email", "ana@example.com")
+								.claim("email_verified", true)
+								.claim("given_name", "Ana")
+								.claim("family_name", "Pérez"))
+						.authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("INACTIVE"));
+	}
+
+	@Test
+	void anonymousCannotReadOwnStatus() throws Exception {
+		mockMvc.perform(get(BASE + "/me/status"))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+
+		verifyNoInteractions(useCase);
+	}
+
 	private static User user() {
 		return new User(ID, Email.of("ana@example.com"), "Ana", "Pérez", PhoneNumber.of("+57 300 1234567"),
 				UserStatus.ACTIVE, CREATED, CREATED);

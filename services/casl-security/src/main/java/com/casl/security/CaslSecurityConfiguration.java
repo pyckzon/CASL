@@ -1,5 +1,6 @@
 package com.casl.security;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -9,10 +10,13 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
+import com.casl.security.userstatus.UserStatusEnforcementFilter;
+import com.casl.security.userstatus.UserStatusVerifier;
 import jakarta.servlet.http.HttpServletRequest;
 import tools.jackson.databind.ObjectMapper;
 
@@ -68,7 +72,9 @@ public class CaslSecurityConfiguration {
 	public SecurityFilterChain caslSecurityFilterChain(HttpSecurity http,
 			AuthenticationEntryPoint authenticationEntryPoint,
 			AccessDeniedHandler accessDeniedHandler,
-			JwtAuthenticationConverter jwtAuthenticationConverter) throws Exception {
+			JwtAuthenticationConverter jwtAuthenticationConverter,
+			ObjectProvider<UserStatusVerifier> userStatusVerifiers,
+			ObjectMapper objectMapper) throws Exception {
 		// API stateless: el JWT viaja en Authorization: Bearer, nunca en cookies. No hay
 		// credenciales ambientales que un navegador adjunte de forma automática, por lo que
 		// ninguna petición necesita protección CSRF.
@@ -84,6 +90,9 @@ public class CaslSecurityConfiguration {
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.authenticationEntryPoint(authenticationEntryPoint)
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
+		userStatusVerifiers.ifAvailable(verifier -> http
+				.addFilterAfter(new UserStatusEnforcementFilter(verifier, objectMapper),
+						BearerTokenAuthenticationFilter.class));
 		return http.build();
 	}
 

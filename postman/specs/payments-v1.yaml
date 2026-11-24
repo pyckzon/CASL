@@ -3,6 +3,9 @@ info:
   title: CASL Payments API
   version: 1.0.0
   summary: Pagos idempotentes; cobros y devoluciones solo para ADMIN o cuenta de servicio
+  description: |
+    Contrato del servicio de pagos. Cobros y devoluciones solo para ADMIN o cuenta de servicio.
+    Estado del usuario (Fase 7): el estado se comprueba en todos los endpoints protegidos; inactivo → `403` `USER_INACTIVE`; indisponibilidad de `users` → `503` `USER_STATUS_UNAVAILABLE`.
 servers:
   - url: http://localhost:8673
     description: Servicio directo

@@ -5,6 +5,7 @@ import com.casl.users.application.query.UserQuery;
 import com.casl.users.domain.model.PageResult;
 import com.casl.users.domain.model.User;
 import com.casl.users.domain.model.UserStatus;
+import com.casl.security.userstatus.UserStatusResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
@@ -58,6 +59,15 @@ public class UserController {
 	@PreAuthorize("hasAnyRole('USER','ADMIN')")
 	public UserResponse me(@AuthenticationPrincipal Jwt jwt) {
 		return UserWebMapper.toResponse(useCase.currentUser(UserWebMapper.toProfile(jwt)));
+	}
+
+	@GetMapping("/me/status")
+	@PreAuthorize("hasAnyRole('USER','ADMIN')")
+	public UserStatusResponse meStatus(@AuthenticationPrincipal Jwt jwt) {
+		// El contrato expone el estado del enum compartido con el módulo de seguridad;
+		// el dominio persiste su propio enum con el mismo nombre.
+		return new UserStatusResponse(com.casl.security.userstatus.UserStatus.valueOf(
+				useCase.statusOf(UserWebMapper.toProfile(jwt)).name()));
 	}
 
 	@GetMapping("/{id}")

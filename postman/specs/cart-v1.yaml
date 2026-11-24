@@ -3,6 +3,9 @@ info:
   title: CASL Cart API
   version: 1.0.0
   summary: Carrito de compras (Redis); el propietario se deriva del JWT validado
+  description: |
+    Contrato del servicio de carrito. El propietario se deriva del JWT validado.
+    Estado del usuario (Fase 7): el estado se comprueba en todos los endpoints protegidos; inactivo → `403` `USER_INACTIVE`; indisponibilidad de `users` → `503` `USER_STATUS_UNAVAILABLE`.
 servers:
   - url: http://localhost:8671
     description: Servicio directo
