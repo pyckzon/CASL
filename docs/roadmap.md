@@ -100,7 +100,7 @@ devuelven `401` con el token local caducado; el detalle y la alternativa están 
 
 Cierra las filas “diferido” de `docs/security/security-baseline.md`.
 
-**Estado:** en curso en `feat/phase-9-security-hardening`; decisiones en ADR-020.
+**Estado:** completada (PR #42); ADR-020 aceptada.
 
 Alcance:
 
