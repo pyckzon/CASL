@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: CASL Cart API
   version: 1.0.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-CASL-Proprietary
   summary: Carrito de compras (Redis); el propietario se deriva del JWT validado
   description: |
     Contrato del servicio de carrito. El propietario se deriva del JWT validado.
@@ -38,6 +41,7 @@ paths:
       tags: [Carts]
       responses:
         '200':
+          description: Carrito encontrado
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
@@ -49,6 +53,7 @@ paths:
       tags: [Carts]
       responses:
         '200':
+          description: Carrito vaciado
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
@@ -67,6 +72,7 @@ paths:
             schema: { $ref: '#/components/schemas/AddItemRequest' }
       responses:
         '200':
+          description: Ítem añadido al carrito
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
@@ -86,6 +92,7 @@ paths:
             schema: { $ref: '#/components/schemas/UpdateQuantityRequest' }
       responses:
         '200':
+          description: Cantidad actualizada
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
@@ -97,6 +104,7 @@ paths:
       tags: [Carts]
       responses:
         '200':
+          description: Ítem eliminado del carrito
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }
@@ -116,6 +124,7 @@ paths:
             schema: { $ref: '#/components/schemas/MergeCartRequest' }
       responses:
         '200':
+          description: Carritos fusionados
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CartResponse' }

@@ -100,14 +100,23 @@ devuelven `401` con el token local caducado; el detalle y la alternativa están 
 
 Cierra las filas “diferido” de `docs/security/security-baseline.md`.
 
+**Estado:** en curso en `feat/phase-9-security-hardening`; decisiones en ADR-020.
+
 Alcance:
 
-1. SBOM CycloneDX por módulo y escaneo Trivy de sistema de archivos en CI, primero
-   *report-only* y después bloqueante para `CRITICAL`/`HIGH` con allowlist caducada.
-2. DAST con OWASP ZAP baseline contra el stack local autenticado con el realm dev.
-3. Reevaluar OWASP Dependency-Check frente a Dependabot + SBOM + Trivy; si se activa,
-   la API key de NVD entra como secreto de CI, nunca en el repositorio.
-4. Actualizar la tabla de herramientas, la política de severidad y las brechas conocidas.
+1. SBOM CycloneDX por módulo (`org.cyclonedx.bom` 3.6.1) y escaneo Trivy de esos SBOM
+   en CI, primero *report-only* y después bloqueante para `CRITICAL`/`HIGH` con
+   allowlist `.trivyignore.yaml` caducada.
+2. DAST con OWASP ZAP **API scan** autenticado contra el stack local y los siete
+   contratos OpenAPI. Se descarta el `zap-baseline.py` puro porque el gateway es una API
+   sin HTML enlazable y el spider no descubriría rutas (ADR-020).
+3. Reevaluar OWASP Dependency-Check frente a Dependabot + SBOM + Trivy. Decisión: no se
+   activa; Dependabot cubre el grafo y SBOM + Trivy lo escanean sin coste operativo de
+   NVD/H2.
+4. Corregir `KEYCLOAK_ISSUER_URI`/`KEYCLOAK_JWK_URI` en los cinco servicios de
+   `compose.yaml` que resolvían JWKS contra `localhost` dentro del contenedor y
+   devolvían `401` con tokens válidos.
+5. Actualizar la tabla de herramientas, la política de severidad y las brechas conocidas.
 
 Criterios de aceptación:
 

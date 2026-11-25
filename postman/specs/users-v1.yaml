@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: CASL Users API
   version: 1.0.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-CASL-Proprietary
   summary: Gestión de usuarios de la plataforma CASL
   description: |
     Contrato del servicio de usuarios. Fuente de verdad para implementación,
@@ -25,8 +28,6 @@ info:
     - Indisponibilidad de `users`: `503` con `code: USER_STATUS_UNAVAILABLE`.
   contact:
     name: CASL
-  license:
-    name: MIT
 
 servers:
   - url: http://localhost:8666
@@ -81,10 +82,8 @@ paths:
                     size: 20
                     totalElements: 0
                     totalPages: 0
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
     post:
       operationId: createUser
@@ -126,12 +125,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /api/users/v1/users/me:
     get:
@@ -162,8 +158,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /api/users/v1/users/me/status:
     get:
@@ -187,8 +182,7 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /api/users/v1/users/{id}:
     parameters:
@@ -205,10 +199,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
     put:
       operationId: replaceUser
@@ -238,14 +230,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
     delete:
       operationId: deleteUser
@@ -254,10 +242,8 @@ paths:
       responses:
         '204':
           description: Usuario eliminado (sin cuerpo)
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
 components:
   securitySchemes:

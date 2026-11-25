@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: CASL Orders API
   version: 1.0.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-CASL-Proprietary
   summary: Ordenes y pagos (saga sincrona); el dueño se deriva del JWT validado
   description: |
     Contrato del servicio de pedidos. El dueño se deriva del JWT validado.
@@ -45,6 +48,7 @@ paths:
       tags: [Orders]
       responses:
         '200':
+          description: Orden encontrada
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OrderResponse' }
@@ -58,6 +62,7 @@ paths:
       tags: [Orders]
       responses:
         '200':
+          description: Resultado del pago de la orden
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OrderResponse' }
@@ -78,6 +83,7 @@ paths:
                 reason: { type: string }
       responses:
         '200':
+          description: Orden cancelada
           content:
             application/json:
               schema: { $ref: '#/components/schemas/OrderResponse' }

@@ -1,6 +1,6 @@
 # Baseline de seguridad — CASL
 
-> Estado: activo · Última revisión: 2026-11-24 · Responsable: Architect
+> Estado: activo · Última revisión: 2026-11-25 · Responsable: Architect
 
 ## 1. Estado verificado
 
@@ -11,6 +11,10 @@
 | Dependabot alerts | GitHub | habilitado |
 | Secret scanning + push protection | GitHub | habilitado (repo público) |
 | SAST | CodeQL `security-extended` | workflow activo en PR, push a `Master` y semanal |
+| SBOM por módulo | `./gradlew cyclonedxDirectBom --no-daemon` | 9/9 JSON con PURLs (`pkg:maven/...`) en `build/reports/sbom/*-bom.json` |
+| Trivy sobre SBOM | `trivy sbom --severity CRITICAL,HIGH --ignore-unfixed --ignorefile .trivyignore.yaml` | **0 hallazgos** en los 9 módulos; antes de la remediación: 6 módulos 0, `order`/`notification`/`shipping` 3 HIGH (lz4-java, snappy-java; con fix disponible) |
+| JWT dev validado | `curl -H "Authorization: Bearer $tok" http://localhost:8080/api/catalog/v1/products` | **200** (Keycloak 26.8, issuer `http://localhost:8180/realms/casl`, `sub` no vacío) |
+| DAST (ZAP AF) | `zap.sh -cmd -autorun .zap/plan.yaml` | 7 specs importados, exit 0, 2xx=13, 0 "Authentication required" en logs de gateway; token en forma segura |
 
 Instantánea del 2026-11-21: Spring Boot 4.1.2, Spring Framework 7.0.10, Tomcat 11.0.27, Log4j2 2.25.5, Jackson 3.1.7, Micrometer 1.17.2. El repositorio ya usa Spring Boot 4.2.0 y Spring Cloud 2026.0.0 (PR #38), por lo que esa imagen debe reconstruirse para volver a medir.
 
@@ -23,11 +27,12 @@ Una foto no es un proceso: la vigencia depende de los escaneos automáticos de �
 | Secretos en historial | gitleaks | **activo** | manual / pre-release |
 | Secretos en push | GitHub secret scanning + push protection | **activo** | automático |
 | Dependencias (CVE) | Dependabot alerts + security updates | **activo** | continuo |
+| Dependencias en build (SBOM) | CycloneDX (Gradle 3.6.1, `cyclonedxDirectBom`) | **activo** | PR; 9 JSON/módulo |
 | SAST | CodeQL `security-extended` | **activo** | PR + push a `Master` + semanal |
 | Contenedor | Trivy image | **activo (no bloqueante)** | CI, imagen `casl-users-service` |
-| Dependencias en build | OWASP Dependency-Check | **diferido** | Fase 9 (reevaluar frente a SBOM + Trivy) |
-| SBOM | CycloneDX (Gradle) | **diferido** | Fase 9 |
-| DAST | OWASP ZAP baseline/API | **diferido** | Fase 9 (Keycloak y contratos ya disponibles) |
+| Dependencias en build | OWASP Dependency-Check | **n/a** | No se adopta (Fase 9: SBOM + Trivy + Dependabot ya lo cubren) |
+| SBOM de módulo + Trivy sobre SBOM | Trivy 0.70.0 | **activo (no bloqueante)** | CI, `CRITICAL,HIGH`, `ignore-unfixed`, allowlist caducada |
+| DAST | OWASP ZAP Automation Framework | **activo (manual, no bloqueante)** | `workflow_dispatch` en `.github/workflows/dast.yml`; plan `.zap/plan.yaml`; lee specs de `postman/specs/` |
 | IaC / Helm | Trivy misconfig / Checkov | **diferido** | Fase 10 (cuando exista Helm) |
 
 Criterio de activación de lo diferido: medir duración del job y ruido antes de volverlo bloqueante.
@@ -79,8 +84,7 @@ Sin fecha de expiración, la excepción no es válida.
 
 | Brecha | Impacto | Mitigación actual |
 |---|---|---|
-| Sin SBOM ni escaneo de dependencias del build | CVE transitivos se detectan al construir la imagen o por Dependabot | Dependabot + Trivy image activos; SBOM y Trivy fs en Fase 9 |
-| Sin DAST | Endpoints no probados dinámicamente | Tests de slice, integración y revisión de contrato; ZAP en Fase 9 |
+| Sin DAST (estático) | Los paths mutantes no se proban dinámicamente | Pruebas de slice/integración, revisión de contrato; ZAP AF activo (Fase 9) |
 | Credenciales dev en `compose.yaml` | Solo aceptable en local | Realm de desarrollo documentado; gestor de secretos en Fase 10 |
 | Sin segmentación de red entre servicios | Un servicio comprometido puede alcanzar otros puertos | Zero-trust JWT en cada servicio y puerto management no publicado |
 | Sin escaneo de IaC | No hay manifiestos K8s/Helm que analizar | Trivy misconfig/Checkov en Fase 10 |

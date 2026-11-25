@@ -1,3 +1,9 @@
+// Restricciones de versión por vulnerabilidades (Fase 9, security hardening).
+// NOTA: la versión de CycloneDX queda fijada en un solo lugar — el catálogo
+// (`gradle/libs.versions.toml`). Si Gradle 9.9.2 permite alguna vez apply
+// con versión via alias, sincronizar con el catálogo antes de hacerlo.
+import org.cyclonedx.gradle.CyclonedxDirectTask
+import org.cyclonedx.model.Component
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 
 plugins {
@@ -35,6 +41,28 @@ dependencies {
 	runtimeOnly("org.apache.logging.log4j:log4j-layout-template-json")
 	testCompileOnly("org.projectlombok:lombok")
 	testAnnotationProcessor("org.projectlombok:lombok")
+}
+
+// ---------------------------------------------------------------------------
+// Restricciones de versión por vulnerabilidades (Fase 9, security hardening).
+// Estas dos librerías son dependencias transitivas del cliente Kafka y solo
+// aparecen en los módulos que arrastran kafka-clients: constraints, no
+// dependencias directas, para no introducir la librería donde no existe.
+// Revisar/eliminar este bloque cuando el BOM de Spring Boot (o kafka-clients)
+// publique una versión que ya incluya las versiones corregidas, o si Trivy
+// vuelve a reportar hallazgos sobre estas librerías.
+// ---------------------------------------------------------------------------
+dependencies {
+	constraints {
+		// CVE-2026-106451
+		implementation("at.yawk.lz4:lz4-java:1.11.4") {
+			because("CVE-2026-106451")
+		}
+		// CVE-2026-93451 / CVE-2026-108106
+		implementation("org.xerial.snappy:snappy-java:1.1.10.9") {
+			because("CVE-2026-93451 / CVE-2026-108106")
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -91,4 +119,20 @@ tasks.jacocoTestCoverageVerification {
 
 tasks.check {
 	dependsOn(integrationTest, tasks.named("jacocoTestCoverageVerification"))
+}
+
+// ---------------------------------------------------------------------------
+// SBOM CycloneDX (Fase 9): un JSON por módulo en build/reports/sbom/<>-bom.json.
+// El plugin se aplica una sola vez en la raíz; aquí solo se configura la tarea
+// directa de cada módulo. La API es la de org.cyclonedx.bom 3.6.1 compilada:
+// jsonOutput/xmlOutput son RegularFileProperty (no booleanos) y no existe
+// outputName/destination: la ruta se fija en jsonOutput.
+// ---------------------------------------------------------------------------
+tasks.named<CyclonedxDirectTask>("cyclonedxDirectBom") {
+	projectType.set(Component.Type.APPLICATION)
+	includeConfigs.set(listOf("runtimeClasspath", "compileClasspath"))
+	failOnUnresolvedDependencies.set(true)
+	jsonOutput.set(layout.buildDirectory.file("reports/sbom/${project.name}-bom.json"))
+	// Solo JSON: se elimina la convención que escribiría el XML por defecto.
+	xmlOutput.unsetConvention()
 }

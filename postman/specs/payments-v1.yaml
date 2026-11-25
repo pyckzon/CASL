@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: CASL Payments API
   version: 1.0.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-CASL-Proprietary
   summary: Pagos idempotentes; cobros y devoluciones solo para ADMIN o cuenta de servicio
   description: |
     Contrato del servicio de pagos. Cobros y devoluciones solo para ADMIN o cuenta de servicio.
@@ -50,6 +53,7 @@ paths:
       description: Requiere rol ADMIN o token de cuenta de servicio (`casl-order-service`).
       responses:
         '200':
+          description: Pago encontrado
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentResponse' }
@@ -64,6 +68,7 @@ paths:
       description: Requiere rol ADMIN o token de cuenta de servicio (`casl-order-service`).
       responses:
         '200':
+          description: Devolución procesada
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentResponse' }

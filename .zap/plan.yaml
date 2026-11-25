@@ -1,0 +1,83 @@
+# Plan del Automation Framework de OWASP ZAP para la Fase 9 de CASL.
+#
+# Notas de diseño (documentación del ADR-020):
+# - Target: http://localhost:8080 (gateway). Con `docker run --network=host`
+#   (ubuntu-latest) esto es el host real.
+# - El job `replacer` añade el header `Authorization: Bearer ...` a todas las
+#   peticiones. `zap-api-scan.py` no soporta `ZAP_AUTH_HEADER*` (solo los
+#   scripts baseline/full), y el uso de `${var}` en `replacementString` no se
+#   sustituye, así que se inyecta el token textualmente en una copia
+#   `.zap-plan.runtime.yaml` que el workflow genera y borra.
+# - 7 jobs `openapi`: uno por contrato en `postman/specs/`.
+# - Importante: el importador OpenAPI de ZAP exige `info.license.identifier`;
+#   los siete specs lo tienen (corregidos antes de fusionar).
+
+env:
+  contexts:
+    - name: casl
+      urls:
+        - http://localhost:8080
+      includePaths:
+        - 'http://localhost:8080/api/.*'
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: false
+
+jobs:
+  - type: replacer
+    parameters:
+      deleteAllRules: true
+    rules:
+      - description: Bearer CASL dev
+        url: 'http://localhost:8080/api/.*'
+        matchType: req_header
+        matchString: Authorization
+        matchRegex: false
+        replacementString: 'Bearer __ZAP_TOKEN__'
+  - type: openapi
+    parameters:
+      apiFile: postman/specs/users-v1.yaml
+      targetUrl: http://localhost:8080
+  - type: openapi
+    parameters:
+      apiFile: postman/specs/catalog-v1.yaml
+      targetUrl: http://localhost:8080
+  - type: openapi
+    parameters:
+      apiFile: postman/specs/cart-v1.yaml
+      targetUrl: http://localhost:8080
+  - type: openapi
+    parameters:
+      apiFile: postman/specs/orders-v1.yaml
+      targetUrl: http://localhost:8080
+  - type: openapi
+    parameters:
+      apiFile: postman/specs/payments-v1.yaml
+      targetUrl: http://localhost:8080
+  - type: openapi
+    parameters:
+      apiFile: postman/specs/shipping-v1.yaml
+      targetUrl: http://localhost:8080
+  - type: openapi
+    parameters:
+      apiFile: postman/specs/notification-v1.yaml
+      targetUrl: http://localhost:8080
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 30
+  - type: report
+    parameters:
+      template: traditional-json
+      reportFile: zap-report.json
+      reportDir: /zap/wrk
+  - type: report
+    parameters:
+      template: traditional-md
+      reportFile: zap-report.md
+      reportDir: /zap/wrk
+  - type: exitStatus
+    parameters:
+      okExitValue: 0
+      warnExitValue: 2
+      errorExitValue: 1

@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: CASL Notification API (contrato asíncrono)
   version: 1.0.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-CASL-Proprietary
   summary: Consumo de eventos de dominio y entrega idempotente de notificaciones
   description: |
     `casl-notification-service` no expone endpoints HTTP de negocio: `paths` está
@@ -28,8 +31,6 @@ info:
     protegido que se incorpore.
   contact:
     name: CASL
-  license:
-    name: MIT
 
 servers:
   - url: http://localhost:8674

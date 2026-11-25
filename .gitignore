@@ -42,3 +42,9 @@ out/
 ### Postman local: credenciales de desarrollo e informes de ejecución ###
 postman/environments/*.local.environment.yaml
 postman/reports/
+
+### ZAP local: plan renderizado con el token e informes de escaneo ###
+.zap-plan.runtime.yaml
+zap-report.json
+zap-report.md
+zap-report.html
