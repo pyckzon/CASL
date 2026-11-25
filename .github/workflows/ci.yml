@@ -136,7 +136,7 @@ jobs:
         uses: aquasecurity/setup-trivy@v0.3.1
         with:
           cache: true
-          version: "0.70.0"   # alineado con `security-baseline.md`
+          version: "v0.70.0"   # tag real del release de Trivy (el install.sh resuelve `releases/<version>` y el tag es `v0.70.0`)
 
       - name: Scan SBOM with Trivy
         run: |
