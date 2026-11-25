@@ -5,6 +5,7 @@
     "prune": true
   },
   "default_agent": "architect",
+  "model": "opencode/deepseek-v4.1-flash-free",
 
   "agents": {
     "architect": {

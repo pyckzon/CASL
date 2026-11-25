@@ -2,6 +2,9 @@ openapi: 3.1.0
 info:
   title: CASL Shipping API
   version: 1.0.0
+  license:
+    name: Proprietary
+    identifier: LicenseRef-CASL-Proprietary
   summary: Envíos creados a partir del evento payment.approved.v1
   description: |
     Contrato HTTP del servicio de envíos. El recurso `shipment` se crea de forma
@@ -25,8 +28,6 @@ info:
     E2E pueda comprobar entrega y DLT fuera de Postman.
   contact:
     name: CASL
-  license:
-    name: MIT
 
 servers:
   - url: http://localhost:8675
@@ -57,14 +58,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ShipmentResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /api/shipping/v1/shipments/{shipmentId}/dispatch:
     parameters:
@@ -80,14 +77,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ShipmentResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
   /api/shipping/v1/shipments/{shipmentId}/deliver:
     parameters:
@@ -103,14 +96,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ShipmentResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalError'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
 
 components:
   securitySchemes:

@@ -1,7 +1,7 @@
 ---
 description: Senior Java Backend Engineer responsible exclusively for application development and automated testing.
 mode: subagent
-model: opencode/flint-40b-free#high
+model: opencode/mimo-v2.6-flash-free
 ---
 # ROLE
 

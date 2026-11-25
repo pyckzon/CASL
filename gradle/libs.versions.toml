@@ -5,6 +5,7 @@ springCloud = "2026.0.0"  # alineado con Spring Boot 4.2.0
 java = "21"
 lombok = "1.18.48"
 archunit = "1.5.1"
+cyclonedx = "3.6.1"
 
 [libraries]
 spring-boot-starter-webmvc = { group = "org.springframework.boot", name = "spring-boot-starter-webmvc", version.ref = "springBoot" }
@@ -39,3 +40,4 @@ archunit-junit5 = { group = "com.tngtech.archunit", name = "archunit-junit5", ve
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
 dependency-management = { id = "io.spring.dependency-management", version.ref = "dependencyManagement" }
+cyclonedx-bom = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }

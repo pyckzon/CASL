@@ -1,0 +1,118 @@
+name: DAST
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zap-api-scan:
+    name: ZAP API Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true
+    steps:
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Build all eight services images
+        run: ./gradlew :services:casl-users-service:bootBuildImage :services:casl-catalog-service:bootBuildImage :services:casl-cart-service:bootBuildImage :services:casl-order-service:bootBuildImage :services:casl-payment-service:bootBuildImage :services:casl-notification-service:bootBuildImage :services:casl-shipping-service:bootBuildImage :services:casl-gateway:bootBuildImage --no-daemon
+
+      - name: Start core infrastructure
+        run: docker compose --profile core up -d
+        timeout-minutes: 5
+
+      - name: Wait for Keycloak readiness
+        run: |
+          timeout 180 bash -c '
+            until curl -fsS http://localhost:8180/realms/casl/.well-known/openid-configuration >/dev/null 2>&1; do
+              echo "Waiting for Keycloak..."
+              sleep 5
+            done
+            echo "Keycloak is ready"
+          '
+          echo "Keycloak readiness check completed"
+
+      - name: Obtain ZAP authentication token
+        id: zap_token
+        run: |
+          TOKEN=$(curl -s -X POST http://localhost:8180/realms/casl/protocol/openid-connect/token \
+            -d "username=admin&password=admin&client_id=casl-gateway&grant_type=password" \
+            | jq -r .access_token)
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "::error::Failed to obtain ZAP authentication token"
+            exit 1
+          fi
+          echo "::add-mask::$TOKEN"
+          echo "ZAP_TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "Token obtained and masked"
+
+      - name: Wait for catalog API availability
+        run: |
+          timeout 180 bash -c '
+            until curl -fsS --connect-timeout 5 -o /dev/null -H "Authorization: Bearer $ZAP_TOKEN" http://localhost:8080/api/catalog/v1/products >/dev/null 2>&1; do
+              echo "Waiting for catalog API..."
+              sleep 5
+            done
+            echo "Catalog API is ready"
+          '
+          echo "Catalog API availability check completed"
+
+      - name: Render automation plan
+        run: sed "s|__ZAP_TOKEN__|$ZAP_TOKEN|" .zap/plan.yaml > .zap-plan.runtime.yaml
+
+      - name: Allow ZAP to write reports
+        run: chmod a+w "$PWD"
+
+      - name: Run ZAP automation plan
+        id: zap
+        run: |
+          set +e
+          docker run --rm --network=host \
+            -v "$PWD:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap.sh -cmd -autorun /zap/wrk/.zap-plan.runtime.yaml
+          code=$?
+          echo "zap_exit_code=$code" >> "$GITHUB_ENV"
+          if [ $code -ne 0 ]; then echo "ZAP plan exit code: $code"; else echo "ZAP plan exit code: 0"; fi
+
+      - name: Summarize ZAP exit code (observational)
+        run: echo zap-exit=${{ env.zap_exit_code }}
+
+      - name: Redact ZAP token from reports
+        run: |
+          shopt -s nullglob
+          files=()
+          for f in zap-report.json zap-report.md; do [ -f "$f" ] && files+=("$f"); done
+          if [ ${#files[@]} -gt 0 ]; then
+            sed -E -i 's/(Bearer)[[:space:]]+[A-Za-z0-9._~+\/=-]+/\1 REDACTED/g' "${files[@]}"
+          fi
+          if grep -rlF -- "$ZAP_TOKEN" zap-report.* 2>/dev/null; then
+            echo "::error::ZAP token found in reports after redaction"
+            rm -f zap-report.json zap-report.md
+            exit 1
+          fi
+          echo "Redaction complete, token removed"
+
+      - name: Upload ZAP reports
+        uses: actions/upload-artifact@v7
+        with:
+          name: zap-reports
+          path: |
+            zap-report.json
+            zap-report.md
+          if-no-files-found: ignore
+
+      - name: Tear down core infrastructure
+        if: always()
+        run: |
+          docker compose --profile core down -v
+          rm -f .zap-plan.runtime.yaml

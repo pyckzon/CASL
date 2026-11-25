@@ -1,7 +1,7 @@
 ---
 description: Lead Software Architect responsible for architecture, technical planning, decision making and engineering team orchestration.
 mode: primary
-model: opencode/big-pickle
+model: opencode/deepseek-v4.1-flash-free
 ---
 # ROLE
 

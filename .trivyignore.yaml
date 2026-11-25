@@ -1,0 +1,8 @@
+﻿# .trivyignore.yaml - Allowlist para escaneos Trivy sobre SBOM
+# Este fichero sigue el formato de Trivy (experimental: `expired_at`); sin
+# `expired_at` la excepción no es válida (docs/security/exceptions.md).
+#
+# Entrada documentada por defecto (sin excepciones necesarias actualmente, ver
+# `docs/security/security-baseline.md`: Trivy sobre SBOM devuelve 0 hallazgos
+# CRITICAL/HIGH):
+vulnerabilities: []
