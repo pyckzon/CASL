@@ -3,9 +3,10 @@ plugins {
 }
 
 repositories {
-	mavenCentral()
-	// org.cyclonedx:cyclonedx-gradle-plugin se publica solo en el Gradle Plugin Portal.
+	// Del adapter: org.cyclonedx:cyclonedx-gradle-plugin se publica en el Gradle
+	// Plugin Portal; en Central devuelve 404 (y a veces 429 en runners nuevos).
 	gradlePluginPortal()
+	mavenCentral()
 }
 
 dependencies {
