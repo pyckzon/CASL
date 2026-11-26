@@ -128,7 +128,7 @@ Criterios de aceptación:
 
 ## Fase 10 — Preparación para producción
 
-Alcance:
+**Estado:** en curso en `feat/phase-10-prod-prep`; ADR-021 aceptada.
 
 1. Manifiestos Kubernetes y charts Helm para los ocho desplegables y el stack de
    observabilidad; escaneo de IaC con Trivy misconfig/Checkov.

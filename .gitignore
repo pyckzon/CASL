@@ -48,3 +48,7 @@ postman/reports/
 zap-report.json
 zap-report.md
 zap-report.html
+
+### Helm (dependencias descargadas por `helm dependency update`) ###
+infra/charts/*/charts/
+infra/charts/*/Chart.lock

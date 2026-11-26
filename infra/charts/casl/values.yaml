@@ -1,0 +1,168 @@
+image:
+  registry: casl
+  tag: 0.0.1-SNAPSHOT
+  pullPolicy: IfNotPresent
+
+replicas: 1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+managementPort: 9090
+
+keycloak:
+  issuerUri: "https://keycloak.casl.local/realms/casl"
+  jwkUri: "http://keycloak:8080/realms/casl/protocol/openid-connect/certs"
+  tokenUri: "http://keycloak:8080/realms/casl/protocol/openid-connect/token"
+
+otlp:
+  endpoint: "http://tempo:4318/v1/traces"
+
+services:
+  casl-users-service:
+    port: 8666
+    secrets:
+      - casl-postgres
+    env:
+      USERS_SERVICE_URI: "http://casl-users-service:8666"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/casl_users"
+  casl-catalog-service:
+    port: 8670
+    secrets:
+      - casl-postgres
+    env:
+      CATALOG_SERVICE_URI: "http://casl-catalog-service:8670"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/casl_catalog"
+  casl-cart-service:
+    port: 8671
+    secrets:
+      - casl-postgres
+    env:
+      CART_SERVICE_URI: "http://casl-cart-service:8671"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/casl_cart"
+  casl-order-service:
+    port: 8672
+    secrets:
+      - casl-postgres
+      - casl-order-client
+    env:
+      ORDER_SERVICE_URI: "http://casl-order-service:8672"
+      PAYMENT_SERVICE_URI: "http://casl-payment-service:8673"
+      USERS_SERVICE_URI: "http://casl-users-service:8666"
+      PAYMENT_BASE_URL: "http://casl-payment-service:8673"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/casl_orders"
+  casl-payment-service:
+    port: 8673
+    secrets:
+      - casl-postgres
+    env:
+      PAYMENT_SERVICE_URI: "http://casl-payment-service:8673"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/casl_payments"
+  casl-notification-service:
+    port: 8674
+    secrets:
+      - casl-postgres
+    env:
+      USERS_SERVICE_URI: "http://casl-users-service:8666"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/casl_notifications"
+  casl-shipping-service:
+    port: 8675
+    secrets:
+      - casl-postgres
+    env:
+      USERS_SERVICE_URI: "http://casl-users-service:8666"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/casl_shipping"
+  casl-gateway:
+    port: 8080
+    env:
+      USERS_SERVICE_URI: "http://casl-users-service:8666"
+      CATALOG_SERVICE_URI: "http://casl-catalog-service:8670"
+      CART_SERVICE_URI: "http://casl-cart-service:8671"
+      ORDER_SERVICE_URI: "http://casl-order-service:8672"
+      PAYMENT_SERVICE_URI: "http://casl-payment-service:8673"
+      SHIPPING_SERVICE_URI: "http://casl-shipping-service:8675"
+
+observability:
+  enabled: true
+
+# fullnameOverride para los subcharts de observabilidad (usados por smoke.sh)
+kube-prometheus-stack:
+  prometheus:
+    fullnameOverride: casl-prometheus
+    prometheusSpec:
+      ruleSelectorNilUsesHelmValues: false
+      ruleSelector:
+        matchLabels:
+          release: casl
+  alertmanager:
+    fullnameOverride: casl-alertmanager
+    config:
+      global:
+        smtp_smarthost: "mailpit:1025"
+        smtp_require_tls: false
+        smtp_from: "casl-alerts@casl.local"
+      route:
+        receiver: casl-email
+        group_by: ["alertname", "service", "severity"]
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 12h
+        routes:
+          - matchers:
+              - severity = "high"
+            receiver: casl-email
+      receivers:
+        - name: casl-email
+          email_configs:
+            - to: "casl-alerts@casl.local"
+              send_resolved: true
+              headers:
+                Subject: '{{ template "email.default.subject" . }}'
+      inhibit_rules:
+        - source_matchers:
+            - alertname = "CaslHighHttpErrorRate"
+          target_matchers:
+            - severity = "warning"
+          equal:
+            - service
+  grafana:
+    fullnameOverride: casl-grafana
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+      datasources:
+        enabled: true
+        label: grafana_datasource
+loki:
+  fullnameOverride: casl-loki
+  test:
+    enabled: false
+  deploymentMode: Monolithic
+  singleBinary:
+    replicas: 1
+  backend:
+    replicas: 0
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+  loki:
+    useTestSchema: true
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: filesystem
+tempo:
+  fullnameOverride: casl-tempo
+
+ingress:
+  enabled: false
+  className: nginx
+  host: casl.local
+  annotations: {}

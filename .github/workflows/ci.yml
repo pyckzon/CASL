@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   pull_request:
@@ -56,8 +56,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      # ubuntu-latest trae Docker: Testcontainers funciona sin configuración extra.
-      # El gate de cobertura se evalúa aquí porque suma unitarios + integración.
+      # ubuntu-latest trae Docker: Testcontainers funciona sin configuraciÃ³n extra.
+      # El gate de cobertura se evalÃºa aquÃ­ porque suma unitarios + integraciÃ³n.
       - name: Integration tests + coverage gate
         run: ./gradlew test integrationTest jacocoTestCoverageVerification --no-daemon
 
@@ -81,8 +81,8 @@ jobs:
     name: trivy image scan (non-blocking)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # Medición en Fase 2.3: reporta, no bloquea. Se vuelve bloqueante
-    # en Fase 3 si el ruido y la duración son aceptables.
+    # MediciÃ³n en Fase 2.3: reporta, no bloquea. Se vuelve bloqueante
+    # en Fase 3 si el ruido y la duraciÃ³n son aceptables.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
@@ -170,3 +170,55 @@ jobs:
           path: "trivy-*.txt"
           if-no-files-found: ignore
         if: always()
+
+
+  iac:
+    name: trivy config (helm misconfiguration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v4.3.1
+      - name: Render helm chart
+        run: |
+          helm dependency update infra/charts/casl
+          helm lint infra/charts/casl
+          mkdir -p /tmp/rendered
+          helm template casl infra/charts/casl > /tmp/rendered/rendered.yaml
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.3.1
+        with:
+          cache: true
+          version: "v0.76.2"
+      - name: Trivy config scan (rendered helm)
+        run: |
+          # Los hallazgos restantes provienen de los subcharts upstream
+          # (node-exporter, kube-prometheus-operator, admission, tempo) y son
+          # inherentes a esos charts; se documentan como excepciones (ADR-021 §8).
+          trivy config --severity CRITICAL,HIGH --exit-code 1 \
+            --ignorefile .trivyignore.yaml /tmp/rendered
+      - name: Trivy config scan (k8s manifests)
+        run: |
+          trivy config --severity CRITICAL,HIGH --exit-code 1 \
+            --ignorefile .trivyignore.yaml infra/k8s
+
+      - name: Validate k8s manifests (YAML syntax)
+        run: |
+          python3 - <<'PY'
+          import glob, yaml, sys
+          files = []
+          for pat in ("infra/k8s/**/*.yaml",):
+              files += glob.glob(pat, recursive=True)
+          for f in sorted(files):
+              with open(f) as fh:
+                  for i, doc in enumerate(yaml.safe_load_all(fh), 1):
+                      if doc is None:
+                          continue
+                      if not isinstance(doc, dict):
+                          print(f"::error file={f}::document {i} is not a mapping")
+                          sys.exit(1)
+          print(f"Validated {len(files)} manifest files")
+          PY

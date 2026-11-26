@@ -1,0 +1,12 @@
+CASL umbrella chart installed.
+
+Services: {{ range $name, $_ := .Values.services }}{{ $name }} {{ end }}
+
+Access:
+  - Gateway:  http://casl-gateway:8080 (port-forward: kubectl -n {{ .Release.Namespace }} port-forward svc/casl-gateway 8080:8080)
+  - Grafana:  http://grafana:3000 (port-forward: kubectl -n {{ .Release.Namespace }} port-forward svc/grafana 3000:3000)
+
+Notes:
+  - Actuator health is on port 9090 (management) inside each pod.
+  - Observability configs (alert-rules, datasources, dashboards) are loaded from infra/observability ConfigMaps; apply them before `helm install`.
+  - Secret `casl-order-client` must exist (created by External Secrets) before casl-order-service starts.
