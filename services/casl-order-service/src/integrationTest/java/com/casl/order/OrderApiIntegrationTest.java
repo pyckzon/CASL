@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(properties = "casl.security.user-status.enabled=false")
+@SpringBootTest(properties = {"casl.security.user-status.enabled=false", "KEYCLOAK_CLIENT_SECRET=casl-order-secret"})
 @AutoConfigureMockMvc
 @Testcontainers
 @TestPropertySource(properties = "casl.payment.simulated=true")
