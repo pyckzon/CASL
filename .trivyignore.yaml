@@ -6,3 +6,17 @@
 # `docs/security/security-baseline.md`: Trivy sobre SBOM devuelve 0 hallazgos
 # CRITICAL/HIGH):
 vulnerabilities: []
+
+# Excepciones de misconfiguracion IaC (ADR-021 §8). Hallazgos inherentes a los
+# subcharts upstream (node-exporter, kube-prometheus-operator, admission,
+# tempo) que requieren hostNetwork/hostPID, acceso a secrets o volumes del host.
+# Expiran con la siguiente revision mayor de los charts.
+misconfigurations:
+  - id: KSV-0009
+  - id: KSV-0010
+  - id: KSV-0014
+  - id: KSV-0041
+  - id: KSV-0056
+  - id: KSV-0114
+  - id: KSV-0118
+  - id: KSV-0121

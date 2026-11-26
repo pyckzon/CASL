@@ -195,6 +195,9 @@ jobs:
           version: "v0.76.2"
       - name: Trivy config scan (rendered helm)
         run: |
+          # Los hallazgos restantes provienen de los subcharts upstream
+          # (node-exporter, kube-prometheus-operator, admission, tempo) y son
+          # inherentes a esos charts; se documentan como excepciones (ADR-021 §8).
           trivy config --severity CRITICAL,HIGH --exit-code 1 \
             --ignorefile .trivyignore.yaml /tmp/rendered
       - name: Trivy config scan (k8s manifests)

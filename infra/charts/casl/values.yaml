@@ -141,6 +141,8 @@ kube-prometheus-stack:
         label: grafana_datasource
 loki:
   fullnameOverride: casl-loki
+  test:
+    enabled: false
   deploymentMode: Monolithic
   singleBinary:
     replicas: 1
