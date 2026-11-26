@@ -1,4 +1,4 @@
-﻿# .trivyignore.yaml - Allowlist para escaneos Trivy sobre SBOM
+﻿# .trivyignore.yaml - Allowlist para escaneos Trivy sobre SBOM e IaC
 # Este fichero sigue el formato de Trivy (experimental: `expired_at`); sin
 # `expired_at` la excepción no es válida (docs/security/exceptions.md).
 #
@@ -7,16 +7,32 @@
 # CRITICAL/HIGH):
 vulnerabilities: []
 
-# Excepciones de misconfiguracion IaC (ADR-021 §8). Hallazgos inherentes a los
-# subcharts upstream (node-exporter, kube-prometheus-operator, admission,
-# tempo) que requieren hostNetwork/hostPID, acceso a secrets o volumes del host.
-# Expiran con la siguiente revision mayor de los charts.
+# Excepciones de misconfiguracion IaC (ADR-021 §8.1, docs/security/exceptions.md).
+# Hallazgos inherentes a los subcharts upstream (node-exporter, prometheus-operator,
+# admission, grafana, loki, tempo) que requieren hostNetwork/hostPID, acceso a secrets
+# o montajes del host. Caducan el 2027-02-24 o antes, con cada revision mayor de charts.
 misconfigurations:
   - id: KSV-0009
+    statement: "node-exporter requiere hostNetwork para capturar metricas del nodo"
+    expired_at: "2027-02-24T00:00:00Z"
   - id: KSV-0010
+    statement: "node-exporter requiere hostPID para metricas de procesos del nodo"
+    expired_at: "2027-02-24T00:00:00Z"
   - id: KSV-0014
+    statement: "template de prueba de loki y chart de tempo no exponen readOnlyRootFilesystem"
+    expired_at: "2027-02-24T00:00:00Z"
   - id: KSV-0041
+    statement: "RBAC de grafana, prometheus-operator, kube-state-metrics y loki lee secrets del chart"
+    expired_at: "2027-02-24T00:00:00Z"
   - id: KSV-0056
+    statement: "prometheus-operator gestiona services/endpoints/ingresses del cluster"
+    expired_at: "2027-02-24T00:00:00Z"
   - id: KSV-0114
+    statement: "webhook de admision de prometheus-operator debe patchar webhookconfigurations"
+    expired_at: "2027-02-24T00:00:00Z"
   - id: KSV-0118
+    statement: "pod de prueba de loki usa el security context por defecto del chart"
+    expired_at: "2027-02-24T00:00:00Z"
   - id: KSV-0121
+    statement: "node-exporter necesita montar /, /proc y /sys del host"
+    expired_at: "2027-02-24T00:00:00Z"

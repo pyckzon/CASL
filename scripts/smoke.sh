@@ -3,9 +3,12 @@
 set -euo pipefail
 
 PF_PIDS=()
+CLUSTER_CREATED=false
 cleanup() {
   for pid in "${PF_PIDS[@]:-}"; do kill "$pid" 2>/dev/null || true; done
-  kind delete cluster --name casl-prod 2>/dev/null || true
+  if [ "$CLUSTER_CREATED" = "true" ]; then
+    kind delete cluster --name casl-prod 2>/dev/null || true
+  fi
 }
 trap cleanup EXIT
 
@@ -21,8 +24,13 @@ helm template casl infra/charts/casl > /tmp/casl-rendered.yaml
 promtool check rules infra/observability/alert-rules.yml
 amtool check-config infra/observability/alertmanager.yml
 
-# --- Cluster ---
-kind create cluster --config infra/kind/kind-config.yaml --wait 180s
+# --- Cluster (se reutiliza si ya existe; solo se borra si lo crea este script) ---
+if kind get clusters | grep -qx casl-prod; then
+  echo "Reutilizando cluster casl-prod"
+else
+  kind create cluster --config infra/kind/kind-config.yaml --wait 180s
+  CLUSTER_CREATED=true
+fi
 
 # --- Prerrequisitos (secretos/configmaps creados fuera de este script) ---
 # Ver docs/production/README.md secciones 2-3b.
@@ -47,7 +55,8 @@ pf svc/casl-grafana 3000:3000
 pf svc/casl-loki 3100:3100
 pf svc/casl-tempo 3200:3200
 pf svc/casl-alertmanager 9093:9093
-# Mailpit vive en el perfil observability de Compose (host:8025); no hay Service en el cluster.
+# Mailpit se expone mediante su Service en el cluster y se publica en el host en 8025.
+pf svc/mailpit 8025:8025
 
 # --- Espera de readiness ---
 for url in http://localhost:9090/-/ready http://localhost:3000/api/health http://localhost:3100/ready http://localhost:3200/ready http://localhost:9093/-/ready; do
