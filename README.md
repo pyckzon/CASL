@@ -57,11 +57,6 @@ Los endpoints de Actuator (`health`, `metrics`, `prometheus`) se sirven en el pu
 management `9090`, que no se publica al host. El puerto de aplicación devuelve 404 o 401
 según la cadena de seguridad.
 
-Requiere `uvx` disponible y un perfil AWS CLI llamado `personal` con credenciales válidas.
-No se versionan credenciales: el perfil se resuelve desde la configuración local de AWS.
-En OpenCode V2 el equivalente se declara bajo `mcp.servers` (`type: local`, `command` como
-array y `environment` en lugar de `env`).
-
 ## Estado
 
 Fases 0 a 10 completadas: API hexagonal, saga síncrona y asíncrona, zero-trust con JWT,
