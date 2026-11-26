@@ -14,21 +14,49 @@ spec:
       labels:
         app.kubernetes.io/name: keycloak
     spec:
+      automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: keycloak
-          image: quay.io/keycloak/keycloak:26.8
-          args: ["start", "--import-realm"]
+          image: casl/keycloak:26.8
+          args: ["start", "--optimized", "--import-realm"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 500m
+              memory: 768Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 15
           env:
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
             - name: KC_DB
               value: postgres
             - name: KC_DB_URL
@@ -56,14 +84,16 @@ spec:
                 secretKeyRef:
                   name: casl-keycloak
                   key: KC_CASL_USERS_SECRET
-            - name: KEYCLOAK_ADMIN
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
               value: admin
-            - name: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: casl-keycloak
                   key: admin_password
           ports:
+            - containerPort: 8080
+              name: http
             - containerPort: 8443
               name: https
           volumeMounts:
@@ -75,6 +105,8 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            - name: data
+              mountPath: /opt/keycloak/data
       volumes:
         - name: certs
           secret:
@@ -83,4 +115,6 @@ spec:
           configMap:
             name: casl-keycloak-realm
         - name: tmp
+          emptyDir: {}
+        - name: data
           emptyDir: {}

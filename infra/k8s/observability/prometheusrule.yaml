@@ -1,0 +1,46 @@
+# PrometheusRule para las 4 alertas CASL (Fase 10).
+# Seleccionada por kube-prometheus-stack (ruleSelector por defecto).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: casl-alert-rules
+  namespace: casl
+  labels:
+    release: casl
+spec:
+  groups:
+    - name: casl.rules
+      rules:
+        - alert: CaslHighHttpErrorRate
+          expr: |
+            sum by (service) (rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+            /
+            sum by (service) (rate(http_server_requests_seconds_count[5m]))
+            > 0.05
+          for: 5m
+          labels:
+            severity: high
+          annotations:
+            summary: "Tasa de errores 5xx alta en {{ $labels.service }}"
+            description: "Mas del 5% de respuestas 5xx durante 5 minutos."
+        - alert: CaslCircuitBreakerOpen
+          expr: resilience4j_circuitbreaker_state{state="open"} == 1
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Circuit breaker abierto en {{ $labels.service }}"
+        - alert: CaslKafkaConsumerLag
+          expr: max by (topic, partition) (kafka_consumer_fetchmanager_records_lag) > 1000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Lag de Kafka alto en {{ $labels.topic }}/{{ $labels.partition }}"
+        - alert: CaslDltPublished
+          expr: rate(casl_dlt_published_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Publicaciones a DLT en {{ $labels.service }}"

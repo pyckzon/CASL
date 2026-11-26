@@ -15,14 +15,24 @@ for c in kind helm kubectl promtool amtool trivy jq curl openssl; do
 done
 
 # --- Validación estática ---
-helm lint infra/charts/casl
 helm dependency update infra/charts/casl
+helm lint infra/charts/casl
 helm template casl infra/charts/casl > /tmp/casl-rendered.yaml
 promtool check rules infra/observability/alert-rules.yml
 amtool check-config infra/observability/alertmanager.yml
 
 # --- Cluster ---
 kind create cluster --config infra/kind/kind-config.yaml --wait 180s
+
+# --- Prerrequisitos (secretos/configmaps creados fuera de este script) ---
+# Ver docs/production/README.md secciones 2-3b.
+kubectl create namespace casl 2>/dev/null || true
+for s in casl-postgres casl-keycloak casl-order-client; do
+  kubectl -n casl get secret "$s" >/dev/null 2>&1 || { echo "FALTA secret: $s (ver README sec.2)"; exit 1; }
+done
+for cm in casl-keycloak-realm casl-datasources casl-dashboards; do
+  kubectl -n casl get configmap "$cm" >/dev/null 2>&1 || { echo "FALTA configmap: $cm (ver README sec.3b)"; exit 1; }
+done
 
 # --- Despliegue ---
 helm upgrade --install casl infra/charts/casl -n casl --create-namespace --wait --timeout 10m

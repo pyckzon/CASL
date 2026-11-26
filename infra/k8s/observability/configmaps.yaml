@@ -7,7 +7,7 @@ metadata:
   namespace: casl
 data:
   alert-rules.yml: |
-    ﻿groups:
+    groups:
       - name: casl.rules
         rules:
           - alert: CaslHighHttpErrorRate
@@ -95,6 +95,8 @@ kind: ConfigMap
 metadata:
   name: casl-datasources
   namespace: casl
+  labels:
+    grafana_datasource: "1"
 data:
   datasources.yml: |
     apiVersion: 1
@@ -104,14 +106,14 @@ data:
         uid: casl-prometheus
         type: prometheus
         access: proxy
-        url: http://prometheus:9090
+        url: http://casl-prometheus:9090
         isDefault: true
         editable: false
       - name: Tempo
         uid: casl-tempo
         type: tempo
         access: proxy
-        url: http://tempo:3200
+        url: http://casl-tempo:3200
         editable: false
         jsonData:
           tracesToLogsV2:
@@ -123,7 +125,7 @@ data:
         uid: casl-loki
         type: loki
         access: proxy
-        url: http://loki:3100
+        url: http://casl-loki:3100
         editable: false
 ---
 apiVersion: v1
@@ -131,6 +133,8 @@ kind: ConfigMap
 metadata:
   name: casl-dashboards
   namespace: casl
+  labels:
+    grafana_dashboard: "1"
 data:
   casl-overview.json: |
     {

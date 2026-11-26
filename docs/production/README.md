@@ -25,6 +25,17 @@ kubectl -n casl create secret generic vault-token --from-literal=token="$VAULT_T
 kubectl apply -f infra/k8s/external-secrets/
 ```
 
+## 2b. Imagen Keycloak optimizada
+```bash
+docker build -t casl/keycloak:26.8 infra/k8s/keycloak/
+kind load docker-image casl/keycloak:26.8 --name casl-prod
+```
+
+## 2c. PostgreSQL
+```bash
+kubectl apply -f infra/k8s/postgres.yaml
+```
+
 ## 3. Keycloak (HTTPS + PostgreSQL externo)
 1. Crear el Secret TLS (certificado autofirmado para `keycloak.casl.local`):
    ```bash
@@ -43,10 +54,9 @@ kubectl apply -f infra/k8s/external-secrets/
    ```
    El realm se importa con placeholders `${KC_CASL_ORDER_SECRET}` resueltos por ESO desde Vault.
 
-## 3b. Observabilidad (ConfigMaps)
-Los ConfigMaps de alertas, Alertmanager, datasources y dashboard se aplican antes del chart:
+## 3b. Observabilidad (ConfigMaps + manifests)
 ```bash
-kubectl apply -f infra/k8s/observability/configmaps.yaml
+kubectl apply -f infra/k8s/observability/
 ```
 (Alternativa equivalente: `kubectl -n casl create configmap casl-alert-rules --from-file=infra/observability/alert-rules.yml`, etc.)
 

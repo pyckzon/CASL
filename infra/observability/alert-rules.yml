@@ -1,4 +1,4 @@
-﻿groups:
+groups:
   - name: casl.rules
     rules:
       - alert: CaslHighHttpErrorRate

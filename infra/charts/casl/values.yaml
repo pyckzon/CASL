@@ -94,10 +94,51 @@ observability:
 kube-prometheus-stack:
   prometheus:
     fullnameOverride: casl-prometheus
+    prometheusSpec:
+      ruleSelectorNilUsesHelmValues: false
+      ruleSelector:
+        matchLabels:
+          release: casl
   alertmanager:
     fullnameOverride: casl-alertmanager
+    config:
+      global:
+        smtp_smarthost: "mailpit:1025"
+        smtp_require_tls: false
+        smtp_from: "casl-alerts@casl.local"
+      route:
+        receiver: casl-email
+        group_by: ["alertname", "service", "severity"]
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 12h
+        routes:
+          - matchers:
+              - severity = "high"
+            receiver: casl-email
+      receivers:
+        - name: casl-email
+          email_configs:
+            - to: "casl-alerts@casl.local"
+              send_resolved: true
+              headers:
+                Subject: '{{ template "email.default.subject" . }}'
+      inhibit_rules:
+        - source_matchers:
+            - alertname = "CaslHighHttpErrorRate"
+          target_matchers:
+            - severity = "warning"
+          equal:
+            - service
   grafana:
     fullnameOverride: casl-grafana
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+      datasources:
+        enabled: true
+        label: grafana_datasource
 loki:
   fullnameOverride: casl-loki
   deploymentMode: Monolithic
@@ -111,6 +152,8 @@ loki:
     replicas: 0
   loki:
     useTestSchema: true
+    commonConfig:
+      replication_factor: 1
     storage:
       type: filesystem
 tempo:
