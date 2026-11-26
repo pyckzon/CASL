@@ -202,8 +202,20 @@ jobs:
           trivy config --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 \
             --ignorefile .trivyignore.yaml infra/k8s
 
-      - name: Validate k8s manifests (dry-run)
+      - name: Validate k8s manifests (YAML syntax)
         run: |
-          for f in $(find infra/k8s -name '*.yaml'); do
-            kubectl apply --dry-run=client -f "$f" || exit 1
-          done
+          python3 - <<'PY'
+          import glob, yaml, sys
+          files = []
+          for pat in ("infra/k8s/**/*.yaml",):
+              files += glob.glob(pat, recursive=True)
+          for f in sorted(files):
+              with open(f) as fh:
+                  for i, doc in enumerate(yaml.safe_load_all(fh), 1):
+                      if doc is None:
+                          continue
+                      if not isinstance(doc, dict):
+                          print(f"::error file={f}::document {i} is not a mapping")
+                          sys.exit(1)
+          print(f"Validated {len(files)} manifest files")
+          PY

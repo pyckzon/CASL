@@ -14,10 +14,20 @@ spec:
       labels:
         app.kubernetes.io/name: keycloak
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
         - name: keycloak
           image: quay.io/keycloak/keycloak:26.8
           args: ["start", "--import-realm"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           env:
             - name: KC_DB
               value: postgres
@@ -63,6 +73,8 @@ spec:
             - name: realm-import
               mountPath: /opt/keycloak/data/import
               readOnly: true
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: certs
           secret:
@@ -70,3 +82,5 @@ spec:
         - name: realm-import
           configMap:
             name: casl-keycloak-realm
+        - name: tmp
+          emptyDir: {}

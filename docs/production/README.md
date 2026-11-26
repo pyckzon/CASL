@@ -26,7 +26,29 @@ kubectl apply -f infra/k8s/external-secrets/
 ```
 
 ## 3. Keycloak (HTTPS + PostgreSQL externo)
-Aplicar `infra/k8s/keycloak/` (StatefulSet, Service, Ingress, TLS Secret). El realm se importa con placeholders `${KC_CASL_ORDER_SECRET}` resueltos por ESO.
+1. Crear el Secret TLS (certificado autofirmado para `keycloak.casl.local`):
+   ```bash
+   openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+     -keyout /tmp/tls.key -out /tmp/tls.crt -subj "/CN=keycloak.casl.local"
+   kubectl -n casl create secret tls keycloak-tls --cert=/tmp/tls.crt --key=/tmp/tls.key
+   ```
+2. Crear el ConfigMap con el realm (parametrizado):
+   ```bash
+   kubectl -n casl create configmap casl-keycloak-realm \
+     --from-file=realm-export.json=infra/k8s/keycloak/realm-export.json
+   ```
+3. Aplicar el resto de manifiestos:
+   ```bash
+   kubectl apply -f infra/k8s/keycloak/
+   ```
+   El realm se importa con placeholders `${KC_CASL_ORDER_SECRET}` resueltos por ESO desde Vault.
+
+## 3b. Observabilidad (ConfigMaps)
+Los ConfigMaps de alertas, Alertmanager, datasources y dashboard se aplican antes del chart:
+```bash
+kubectl apply -f infra/k8s/observability/configmaps.yaml
+```
+(Alternativa equivalente: `kubectl -n casl create configmap casl-alert-rules --from-file=infra/observability/alert-rules.yml`, etc.)
 
 ## 4. Despliegue CASL
 ```bash

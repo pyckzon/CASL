@@ -7,8 +7,43 @@ metadata:
   namespace: casl
 data:
   alert-rules.yml: |
-    # placeholder — reemplazar con el contenido de infra/observability/alert-rules.yml
-    # (se monta como /etc/prometheus/alert-rules.yml)
+    ﻿groups:
+      - name: casl.rules
+        rules:
+          - alert: CaslHighHttpErrorRate
+            expr: |
+              sum by (service) (rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+              /
+              sum by (service) (rate(http_server_requests_seconds_count[5m]))
+              > 0.05
+            for: 5m
+            labels:
+              severity: high
+            annotations:
+              summary: "Tasa de errores 5xx alta en {{ $labels.service }}"
+              description: "Más del 5% de respuestas 5xx durante 5 minutos."
+          - alert: CaslCircuitBreakerOpen
+            expr: resilience4j_circuitbreaker_state{state="open"} == 1
+            for: 1m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Circuit breaker abierto en {{ $labels.service }}"
+          - alert: CaslKafkaConsumerLag
+            # Alternativa si la app expone observations: kafka_consumer_records_lag_max
+            expr: max by (topic, partition) (kafka_consumer_fetchmanager_records_lag) > 1000
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Lag de Kafka alto en {{ $labels.topic }}/{{ $labels.partition }}"
+          - alert: CaslDltPublished
+            expr: rate(casl_dlt_published_total[5m]) > 0
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Publicaciones a DLT en {{ $labels.service }}"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -17,7 +52,43 @@ metadata:
   namespace: casl
 data:
   alertmanager.yml: |
-    # placeholder — reemplazar con el contenido de infra/observability/alertmanager.yml
+    global:
+      smtp_smarthost: 'mailpit:1025'
+      smtp_require_tls: false
+      smtp_from: 'casl-alerts@casl.local'
+
+    route:
+      receiver: casl-email
+      group_by: ["alertname", "service", "severity"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      routes:
+        - matchers:
+            - severity = "high"
+          receiver: casl-email
+
+    receivers:
+      - name: casl-email
+        email_configs:
+          - to: 'casl-alerts@casl.local'
+            send_resolved: true
+            headers:
+              Subject: '{{ template "email.default.subject" . }}'
+
+    inhibit_rules:
+      - source_matchers:
+          - alertname = "CaslHighHttpErrorRate"
+        target_matchers:
+          - severity = "warning"
+        equal:
+          - service
+
+    # Dev: Mailpit v1.34.0 (SMTP 0.0.0.0:1025, UI 8025, REST /api/v1/messages).
+    # Snippet docker compose (perfil observability):
+    #   mailpit:
+    #     image: axllent/mailpit:v1.34.0
+    #     ports: ["8025:8025", "1025:1025"]
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -26,7 +97,34 @@ metadata:
   namespace: casl
 data:
   datasources.yml: |
-    # placeholder — reemplazar con el contenido de infra/observability/grafana/provisioning/datasources/datasources.yml
+    apiVersion: 1
+
+    datasources:
+      - name: Prometheus
+        uid: casl-prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+        editable: false
+      - name: Tempo
+        uid: casl-tempo
+        type: tempo
+        access: proxy
+        url: http://tempo:3200
+        editable: false
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: casl-loki
+            spanStartTimeShift: "-1h"
+            spanEndTimeShift: "1h"
+            tags: [{key: "service", value: "service"}]
+      - name: Loki
+        uid: casl-loki
+        type: loki
+        access: proxy
+        url: http://loki:3100
+        editable: false
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -35,4 +133,66 @@ metadata:
   namespace: casl
 data:
   casl-overview.json: |
-    # placeholder — reemplazar con el contenido de infra/observability/grafana/dashboards/casl-overview.json
+    {
+      "uid": "casl-overview",
+      "title": "CASL Overview",
+      "tags": ["casl", "observability"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "HTTP 5xx rate",
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0},
+          "datasource": {"type": "prometheus", "uid": "casl-prometheus"},
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) by (service)",
+              "legendFormat": "{{service}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {"unit": "reqps"},
+            "overrides": []
+          },
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "JVM heap used",
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0},
+          "datasource": {"type": "prometheus", "uid": "casl-prometheus"},
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (service) (jvm_memory_used_bytes{area=\"heap\"})",
+              "legendFormat": "{{service}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {"unit": "bytes"},
+            "overrides": []
+          },
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+        },
+        {
+          "id": 3,
+          "type": "text",
+          "title": "Trazas",
+          "gridPos": {"h": 6, "w": 24, "x": 0, "y": 9},
+          "options": {
+            "mode": "markdown",
+            "content": "Explora trazas en Tempo: [Abrir Tempo](/explore?left={\"datasource\":\"casl-tempo\"}). Correlaciona con logs por `traceId` en Loki."
+          }
+        }
+      ]
+    }
