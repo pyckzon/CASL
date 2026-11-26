@@ -70,12 +70,3 @@ spec:
         - name: realm-import
           configMap:
             name: casl-keycloak-realm
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: casl-keycloak-realm
-  namespace: casl
-data:
-  realm-export.json: |
-    # Reemplazar con el contenido de infra/k8s/keycloak/realm-export.json (parametrizado)

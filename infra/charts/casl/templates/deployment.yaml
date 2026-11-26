@@ -16,6 +16,10 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: {{ $name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ $.Values.managementPort }}"
+        prometheus.io/path: /actuator/prometheus
     spec:
       automountServiceAccountToken: false
       securityContext:

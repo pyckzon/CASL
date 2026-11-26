@@ -18,7 +18,7 @@ managementPort: 9090
 keycloak:
   issuerUri: "https://keycloak.casl.local/realms/casl"
   jwkUri: "http://keycloak:8080/realms/casl/protocol/openid-connect/certs"
-  tokenUri: "https://keycloak:8443/realms/casl/protocol/openid-connect/token"
+  tokenUri: "http://keycloak:8080/realms/casl/protocol/openid-connect/token"
 
 otlp:
   endpoint: "http://tempo:4318/v1/traces"
