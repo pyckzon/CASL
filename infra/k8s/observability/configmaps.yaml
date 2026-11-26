@@ -1,0 +1,38 @@
+# ConfigMaps para la observabilidad en K8s (Fase 10).
+# Aplicar antes del chart: kubectl apply -f infra/k8s/observability/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casl-alert-rules
+  namespace: casl
+data:
+  alert-rules.yml: |
+    # placeholder — reemplazar con el contenido de infra/observability/alert-rules.yml
+    # (se monta como /etc/prometheus/alert-rules.yml)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casl-alertmanager
+  namespace: casl
+data:
+  alertmanager.yml: |
+    # placeholder — reemplazar con el contenido de infra/observability/alertmanager.yml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casl-datasources
+  namespace: casl
+data:
+  datasources.yml: |
+    # placeholder — reemplazar con el contenido de infra/observability/grafana/provisioning/datasources/datasources.yml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casl-dashboards
+  namespace: casl
+data:
+  casl-overview.json: |
+    # placeholder — reemplazar con el contenido de infra/observability/grafana/dashboards/casl-overview.json

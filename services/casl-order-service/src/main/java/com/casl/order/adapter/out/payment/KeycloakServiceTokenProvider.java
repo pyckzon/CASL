@@ -31,7 +31,7 @@ public class KeycloakServiceTokenProvider {
 	public KeycloakServiceTokenProvider(
 			@Value("${KEYCLOAK_TOKEN_URI:http://localhost:8180/realms/casl/protocol/openid-connect/token}") String tokenUri,
 			@Value("${KEYCLOAK_CLIENT_ID:casl-order-service}") String clientId,
-			@Value("${KEYCLOAK_CLIENT_SECRET:casl-order-secret}") String clientSecret) {
+			@Value("${KEYCLOAK_CLIENT_SECRET}") String clientSecret) {
 		this.restClient = RestClient.create();
 		this.tokenUri = tokenUri;
 		this.clientId = clientId;
