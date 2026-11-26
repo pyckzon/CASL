@@ -100,7 +100,8 @@ kube-prometheus-stack:
     fullnameOverride: casl-grafana
 loki:
   fullnameOverride: casl-loki
-  useTestSchema: true
+  storage:
+    type: filesystem
 tempo:
   fullnameOverride: casl-tempo
 
