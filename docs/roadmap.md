@@ -1,10 +1,10 @@
 # Roadmap CASL
 
-- **Estado:** propuesto, alineado con el estado de `Master` al 2026-11-24
+- **Estado:** ejecutado hasta la Fase 10, alineado con `Master` al 2026-11-26 (`eb5ba92`)
 - **Finalidad:** convertir las fases mencionadas en ADRs y PRs en un alcance verificable
 - **No es:** un calendario de fechas ni un compromiso de numeración rígida
 
-Las fases 8 y 9 no existían como tal en la documentación previa; se numeran aquí para
+Las fases 8, 9 y 10 no existían como tal en la documentación previa; se numeran aquí para
 dejar explícito el trabajo que hoy está disperso en `docs/security/security-baseline.md`
 y en los pendientes de los PRs. La numeración puede reordenarse sin cambiar el alcance.
 
@@ -21,10 +21,13 @@ y en los pendientes de los PRs. La numeración puede reordenarse sin cambiar el 
 | 6 | Trazas OTLP, logs JSON correlacionados, métricas y stack local | `3d00e5c` |
 | 7 | Estado de usuario en los ocho desplegables, caché y fail-closed | `e6851ff` |
 | 8 | Siete specs, colección E2E autenticada y verificación Kafka/DLT | PR #41 |
+| 9 | Hardening de seguridad y calidad (SBOM, Trivy, ZAP AF) | PR #42 (`2bc2e5b`) |
+| 10 | Producción (kind, Helm, ESO/Vault, Keycloak HTTPS, smoke test) | PR #43 (`eb5ba92`) |
 | Mantenimiento | Wrapper Gradle 9.9.2; Boot 4.2.0 + Spring Cloud 2026.0.0 | `f5eff50`, `f609eb9` |
 
-Resultado: **no quedan PRs abiertos**. Checks requeridos en verde: `unit tests`,
-`integration tests`, `CodeQL (java-kotlin)`.
+Resultado: **no quedan PRs abiertos; Fase 10 cerrada**. Checks del PR #43 en verde:
+`unit tests`, `integration tests`, `CodeQL`, `CodeQL (java-kotlin)`, `sbom + trivy`,
+`trivy image scan (non-blocking)` y `trivy config (helm misconfiguration)`.
 
 ## Principios que no cambian
 
@@ -128,24 +131,34 @@ Criterios de aceptación:
 
 ## Fase 10 — Preparación para producción
 
-**Estado:** en curso en `feat/phase-10-prod-prep`; ADR-021 aceptada.
+**Estado:** completada (PR #43, squash `eb5ba92`); ADR-021 aceptada.
 
-1. Manifiestos Kubernetes y charts Helm para los ocho desplegables y el stack de
-   observabilidad; escaneo de IaC con Trivy misconfig/Checkov.
-2. Secretos reales mediante un gestor externo; Keycloak con HTTPS y base de datos
-   externa; cuenta de servicio `order → payment` sin credenciales de desarrollo.
-3. Receptores reales de Alertmanager en lugar del webhook local.
-4. Smoke test de arranque completo: Prometheus, Grafana, Tempo, Loki y Promtail con
-   trazas, logs y métricas correlacionadas.
+1. Cluster `kind` v0.33.0, chart *umbrella* `casl` (Helm 4.3.1) para los ocho desplegables
+   y el stack de observabilidad, y escaneo de IaC con `trivy config` en CI.
+2. Secretos reales mediante ESO v2.15.0 + Vault dev; Keycloak 26.8 con HTTPS, PostgreSQL
+   17 externo e imagen pre-augmentada (`start --optimized`); cuenta de servicio
+   `order → payment` sin credenciales de desarrollo.
+3. Alertmanager con receptor email real (Mailpit) en lugar del webhook local.
+4. Smoke test orquestado (`scripts/smoke.sh`) de arranque completo: Prometheus, Grafana,
+   Tempo, Loki y Grafana Alloy con trazas, logs y métricas correlacionadas.
 
 Criterios de aceptación:
 
-- Despliegue reproducible en un cluster local (por ejemplo `kind`) sin secretos en Git.
-- Las cuatro alertas de `infra/observability/alert-rules.yml` llegan a un receptor real.
+- Despliegue reproducible en un cluster local (`kind`) sin secretos de producción en Git;
+  la credencial dev fija del Postgres local queda documentada como brecha conocida.
+- Las cuatro alertas de `infra/k8s/observability/prometheusrule.yaml` llegan a Mailpit.
 - El dashboard `casl-overview` muestra datos de los ocho servicios.
+
+**Verificación:** todos los checks del PR #43 en verde, incluido `trivy config` sobre
+`helm template` y `infra/k8s`. Validación local: `helm dependency update`, `helm lint`,
+`helm template`, `trivy config` (rendered + manifiestos) y parse YAML de 15 archivos.
+El arranque del cluster con `bash scripts/smoke.sh` requiere Docker/kind y los secretos
+previos descritos en `docs/production/README.md`; no se ejecutó en el entorno donde se
+cerró la documentación.
 
 ## Decisiones abiertas
 
-- Política exacta de degradación cuando `users` no responde durante la comprobación de
-  estado (fail-closed vs fail-open para lectura propia). Se fija antes de cerrar Fase 7.
-- Numeración y alcance de Fase 8/9 si aparece trabajo de frontend o de API pública.
+- La degradación cuando `users` no responde quedó fijada como fail-closed en ADR-018
+  (Fase 7), sin cambio en Fase 10.
+- Numeración y alcance de una posible Fase 11: frontend, API pública, multi-tenancy o
+  DR/backup. Requiere ADR y criterios de aceptación propios antes de iniciarse.

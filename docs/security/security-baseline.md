@@ -1,6 +1,6 @@
 # Baseline de seguridad — CASL
 
-> Estado: activo · Última revisión: 2026-11-25 · Responsable: Architect
+> Estado: activo · Última revisión: 2026-11-26 · Responsable: Architect
 
 ## 1. Estado verificado
 
@@ -15,10 +15,11 @@
 | Trivy sobre SBOM | `trivy sbom --severity CRITICAL,HIGH --ignore-unfixed --ignorefile .trivyignore.yaml` | **0 hallazgos** en los 9 módulos; antes de la remediación: 6 módulos 0, `order`/`notification`/`shipping` 3 HIGH (lz4-java, snappy-java; con fix disponible) |
 | JWT dev validado | `curl -H "Authorization: Bearer $tok" http://localhost:8080/api/catalog/v1/products` | **200** (Keycloak 26.8, issuer `http://localhost:8180/realms/casl`, `sub` no vacío) |
 | DAST (ZAP AF) | `zap.sh -cmd -autorun .zap/plan.yaml` | 7 specs importados, exit 0, 2xx=13, 0 "Authentication required" en logs de gateway; token en forma segura |
+| IaC (Helm + K8s) | `trivy config --severity CRITICAL,HIGH --exit-code 1 --ignorefile .trivyignore.yaml` sobre `helm template` e `infra/k8s` | **0 hallazgos** CRITICAL/HIGH en CI del PR #43; 8 exenciones de subcharts upstream en `exceptions.md` |
 
 Instantánea del 2026-11-21: Spring Boot 4.1.2, Spring Framework 7.0.10, Tomcat 11.0.27, Log4j2 2.25.5, Jackson 3.1.7, Micrometer 1.17.2. El repositorio ya usa Spring Boot 4.2.0 y Spring Cloud 2026.0.0 (PR #38), por lo que esa imagen debe reconstruirse para volver a medir.
 
-Una foto no es un proceso: la vigencia depende de los escaneos automáticos de §2. El trabajo pendiente está en [`docs/roadmap.md`](../roadmap.md).
+Una foto no es un proceso: la vigencia depende de los escaneos automáticos de §2. El estado de las fases está en [`docs/roadmap.md`](../roadmap.md).
 
 ## 2. Capas
 
@@ -33,9 +34,9 @@ Una foto no es un proceso: la vigencia depende de los escaneos automáticos de �
 | Dependencias en build | OWASP Dependency-Check | **n/a** | No se adopta (Fase 9: SBOM + Trivy + Dependabot ya lo cubren) |
 | SBOM de módulo + Trivy sobre SBOM | Trivy 0.70.0 | **activo (no bloqueante)** | CI, `CRITICAL,HIGH`, `ignore-unfixed`, allowlist caducada |
 | DAST | OWASP ZAP Automation Framework | **activo (manual, no bloqueante)** | `workflow_dispatch` en `.github/workflows/dast.yml`; plan `.zap/plan.yaml`; lee specs de `postman/specs/` |
-| IaC / Helm | Trivy misconfig / Checkov | **diferido** | Fase 10 (cuando exista Helm) |
+| IaC / Helm | Trivy misconfig | **activo (bloqueante)** | PR + push a `Master`; `helm template` e `infra/k8s`, umbral `CRITICAL,HIGH` |
 
-Criterio de activación de lo diferido: medir duración del job y ruido antes de volverlo bloqueante.
+Checkov queda como *second opinion* (ADR-021); las exenciones de subcharts upstream se rigen por `exceptions.md` y caducan el 2027-02-24.
 
 ## 3. Ejecución local
 
@@ -85,6 +86,7 @@ Sin fecha de expiración, la excepción no es válida.
 | Brecha | Impacto | Mitigación actual |
 |---|---|---|
 | Sin DAST (estático) | Los paths mutantes no se proban dinámicamente | Pruebas de slice/integración, revisión de contrato; ZAP AF activo (Fase 9) |
-| Credenciales dev en `compose.yaml` | Solo aceptable en local | Realm de desarrollo documentado; gestor de secretos en Fase 10 |
+| Credenciales dev en `compose.yaml` | Solo aceptable en local | Realm de desarrollo documentado; en K8s los secretos se materializan desde Vault con ESO (Fase 10), sin secretos de producción en Git (única excepción en la fila siguiente) |
 | Sin segmentación de red entre servicios | Un servicio comprometido puede alcanzar otros puertos | Zero-trust JWT en cada servicio y puerto management no publicado |
-| Sin escaneo de IaC | No hay manifiestos K8s/Helm que analizar | Trivy misconfig/Checkov en Fase 10 |
+| Exenciones de IaC en subcharts upstream | RBAC/host mounts amplios en charts de terceros | Ocho IDs con justificación y caducidad en `exceptions.md`; el código CASL propio no usa exenciones |
+| Credencial dev fija en `infra/k8s/postgres.yaml` | Solo apta para el cluster local `kind` | Documentada en `docs/production/README.md` y ADR-021; externalizar desde Vault antes de cualquier entorno no local |
