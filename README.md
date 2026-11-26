@@ -7,7 +7,8 @@ Sistema de microservicios de e-commerce construido como portfolio de arquitectur
 - Spring Boot 4.2.0 · Java 21 · Gradle 9.9.2 multi-módulo (Kotlin DSL)
 - Spring Cloud 2026.0.0 (Gateway WebMVC) · Apache Kafka (saga coreografiada + Outbox)
 - PostgreSQL + Flyway · Redis · Keycloak 26.8
-- Micrometer/OTLP/Tempo · Prometheus · Grafana · Loki · Promtail
+- Micrometer/OTLP/Tempo · Prometheus · Grafana · Loki · Promtail (Compose) / Alloy (K8s)
+- Despliegue local reproducible: kind + Helm · ESO/Vault · Keycloak HTTPS (Fase 10)
 
 ## Estructura
 
@@ -24,9 +25,12 @@ services/
   casl-shipping-service/     # saga coreografiada de envío
 postman/specs/               # contratos OpenAPI 3.1
 infra/observability/         # Prometheus, Alertmanager, Grafana, Tempo, Loki, Promtail
+infra/k8s/                   # manifiestos de producción (Keycloak, Postgres, Alloy, Mailpit, ESO)
+infra/charts/casl/           # chart umbrella (8 servicios + observabilidad)
 infra/keycloak/              # realm export de desarrollo
 docs/architecture/decisions/ # ADRs
-docs/roadmap.md              # fases pendientes y criterios de aceptación
+docs/roadmap.md              # fases y criterios de aceptación
+docs/production/README.md    # arranque y verificación en kind
 compose.yaml                 # orquestación por perfiles
 buildSrc/                    # plugin de convención casl-spring-boot-service
 gradle/libs.versions.toml    # versiones centralizadas
@@ -55,10 +59,11 @@ según la cadena de seguridad.
 
 ## Estado
 
-Fases 0 a 6 completadas: API hexagonal, saga síncrona y asíncrona, zero-trust con JWT y
-observabilidad correlacionada. No hay PRs abiertos.
+Fases 0 a 10 completadas: API hexagonal, saga síncrona y asíncrona, zero-trust con JWT,
+observabilidad correlacionada, contratos ejecutables, hardening y despliegue reproducible
+en `kind` (PR #43 y cierre documental PR #44). No hay PRs abiertos.
 
-- Roadmap y trabajo pendiente: [`docs/roadmap.md`](docs/roadmap.md)
+- Roadmap y estado de fases: [`docs/roadmap.md`](docs/roadmap.md)
 - Decisiones arquitectónicas: [`docs/architecture/decisions/`](docs/architecture/decisions/)
 - Línea base de seguridad: [`docs/security/security-baseline.md`](docs/security/security-baseline.md)
 - Excepciones vigentes: [`docs/security/exceptions.md`](docs/security/exceptions.md)
